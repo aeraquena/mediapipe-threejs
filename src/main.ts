@@ -147,6 +147,9 @@ function enableCam(_event?: Event): void {
 }
 
 let lastVideoTime = -1;
+
+let handDistance: number | null = 0;
+
 async function predictWebcam() {
   canvasElement.style.height = videoHeight;
   video.style.height = videoHeight;
@@ -196,6 +199,7 @@ async function predictWebcam() {
         const lm19 = primary && primary[19];
         const lm20 = primary && primary[20];
         const primaryDist = distance2D(lm19, lm20);
+        handDistance = primaryDist;
         drawDistanceBar(primaryDist);
       }
 
@@ -228,28 +232,22 @@ camera.lookAt(0, 0, 0);
 
 const scene = new THREE.Scene();
 
+// Lighting
+
+// directional light
+const white = 0xffffff;
+const directionalLight = new THREE.DirectionalLight(white, 3);
+directionalLight.position.set(100, 0, 100);
+directionalLight.target.position.set(5, 5, 0);
+scene.add(directionalLight);
+scene.add(directionalLight.target);
+
 // Cube
 
 const geometry = new THREE.BoxGeometry(4, 4, 4);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const material = new THREE.MeshToonMaterial({ color: 0x00ff00 });
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
-
-//camera.position.z = 5;
-
-// Line
-
-// Line example (kept for reference) - not used to avoid unused variable errors
-// create a blue LineBasicMaterial
-// const lineMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
-// const points = [];
-// points.push(new THREE.Vector3(-10, 0, 0));
-// points.push(new THREE.Vector3(0, 10, 0));
-// points.push(new THREE.Vector3(10, 0, 0));
-// const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-// Line geometry prepared but not added to scene.
-// const line = new THREE.Line(lineGeometry, lineMaterial);
-// scene.add(line);
 
 // Sphere
 
@@ -279,7 +277,7 @@ dodecahedron.position.y = 10;
 
 function animate() {
   cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
+  cube.scale.x = handDistance ? handDistance * 10 : 0;
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
