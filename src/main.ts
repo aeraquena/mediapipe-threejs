@@ -4,16 +4,17 @@ import {
   FilesetResolver,
   DrawingUtils,
 } from "@mediapipe/tasks-vision";
+import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 
 /********************************************************************
  * MediaPipe                                                        *
  ********************************************************************/
 
-const demosSection = document.getElementById("demos");
+const demosSection = document.getElementById("demos") as HTMLElement;
 
-let poseLandmarker = undefined;
-let runningMode = "IMAGE";
-let enableWebcamButton;
+let poseLandmarker: PoseLandmarker | undefined = undefined;
+let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
+let enableWebcamButton: HTMLButtonElement | null = null;
 let webcamRunning = false;
 const videoHeight = "360px";
 const videoWidth = "480px";
@@ -29,7 +30,6 @@ const createPoseLandmarker = async () => {
     baseOptions: {
       modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task`,
       // https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task
-      // https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task
       delegate: "GPU",
     },
     runningMode: runningMode,
@@ -43,13 +43,18 @@ createPoseLandmarker();
 // Continuously grab image from webcam stream and detect it.
 ************************************************************/
 
-const video = document.getElementById("webcam");
-const canvasElement = document.getElementById("output_canvas");
-const canvasCtx = canvasElement.getContext("2d");
-const drawingUtils = new DrawingUtils(canvasCtx);
+const video = document.getElementById("webcam") as HTMLVideoElement;
+const canvasElement = document.getElementById(
+  "output_canvas"
+) as HTMLCanvasElement;
+const canvasCtx = canvasElement.getContext("2d") as CanvasRenderingContext2D;
+const drawingUtils = new DrawingUtils(canvasCtx as CanvasRenderingContext2D);
 
 // Helper: 2D Euclidean distance for normalized coordinates (x,y in 0..1)
-function distance2D(a, b) {
+function distance2D(
+  a: { x: number; y: number } | undefined | null,
+  b: { x: number; y: number } | undefined | null
+): number | null {
   if (!a || !b) return null;
   const dx = a.x - b.x;
   const dy = a.y - b.y;
@@ -58,7 +63,10 @@ function distance2D(a, b) {
 
 // Draw a horizontal distance bar at the bottom of the canvas.
 // length is proportional to the normalized distance (0..1)
-function drawDistanceBar(normalizedDistance, opts = {}) {
+function drawDistanceBar(
+  normalizedDistance: number | null,
+  opts: Partial<{ x: number; y: number; height: number; maxWidth: number }> = {}
+): void {
   const {
     x = 10,
     y = canvasElement.height - 30,
@@ -93,19 +101,23 @@ function drawDistanceBar(normalizedDistance, opts = {}) {
 }
 
 // Check if webcam access is supported.
-const hasGetUserMedia = () => !!navigator.mediaDevices?.getUserMedia;
+const hasGetUserMedia = (): boolean => !!navigator.mediaDevices?.getUserMedia;
 
 // If webcam supported, add event listener to button for when user
 // wants to activate it.
 if (hasGetUserMedia()) {
-  enableWebcamButton = document.getElementById("webcamButton");
-  enableWebcamButton.addEventListener("click", enableCam);
+  enableWebcamButton = document.getElementById(
+    "webcamButton"
+  ) as HTMLButtonElement | null;
+  if (enableWebcamButton) {
+    enableWebcamButton.addEventListener("click", enableCam as EventListener);
+  }
 } else {
   console.warn("getUserMedia() is not supported by your browser");
 }
 
 // Enable the live webcam view and start detection.
-function enableCam(event) {
+function enableCam(_event?: Event): void {
   if (!poseLandmarker) {
     console.log("Wait! poseLandmaker not loaded yet.");
     return;
@@ -113,22 +125,25 @@ function enableCam(event) {
 
   if (webcamRunning === true) {
     webcamRunning = false;
-    enableWebcamButton.innerText = "ENABLE PREDICTIONS";
+    if (enableWebcamButton) enableWebcamButton.innerText = "ENABLE PREDICTIONS";
   } else {
     webcamRunning = true;
-    enableWebcamButton.innerText = "DISABLE PREDICTIONS";
+    if (enableWebcamButton)
+      enableWebcamButton.innerText = "DISABLE PREDICTIONS";
   }
 
   // getUsermedia parameters.
-  const constraints = {
+  const constraints: MediaStreamConstraints = {
     video: true,
   };
 
   // Activate the webcam stream.
-  navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-    video.srcObject = stream;
-    video.addEventListener("loadeddata", predictWebcam);
-  });
+  navigator.mediaDevices
+    .getUserMedia(constraints)
+    .then((stream: MediaStream) => {
+      video.srcObject = stream;
+      video.addEventListener("loadeddata", predictWebcam as EventListener);
+    });
 }
 
 let lastVideoTime = -1;
@@ -140,21 +155,24 @@ async function predictWebcam() {
   // Now let's start detecting the stream.
   if (runningMode === "IMAGE") {
     runningMode = "VIDEO";
-    await poseLandmarker.setOptions({ runningMode: "VIDEO" });
+    await poseLandmarker!.setOptions({ runningMode: "VIDEO" });
   }
   let startTimeMs = performance.now();
   if (lastVideoTime !== video.currentTime) {
     lastVideoTime = video.currentTime;
-    poseLandmarker.detectForVideo(video, startTimeMs, (result) => {
+    poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
       //console.log(result);
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       for (const landmark of result.landmarks) {
-        drawingUtils.drawLandmarks(landmark, {
-          radius: (data) =>
-            DrawingUtils.lerp(data.from && data.from.z, -0.15, 0.1, 5, 1),
+        drawingUtils.drawLandmarks(landmark as NormalizedLandmark[], {
+          radius: (data: any) =>
+            DrawingUtils.lerp((data.from?.z ?? 0) as number, -0.15, 0.1, 5, 1),
         });
-        drawingUtils.drawConnectors(landmark, PoseLandmarker.POSE_CONNECTIONS);
+        drawingUtils.drawConnectors(
+          landmark as NormalizedLandmark[],
+          PoseLandmarker.POSE_CONNECTIONS as any
+        );
       }
 
       // Compute and log normalized 2D distance between landmark indices 19 and 20
@@ -187,7 +205,7 @@ async function predictWebcam() {
 
   // Call this function again to keep predicting when the browser is ready.
   if (webcamRunning === true) {
-    window.requestAnimationFrame(predictWebcam);
+    window.requestAnimationFrame(predictWebcam as FrameRequestCallback);
   }
 }
 
@@ -221,16 +239,17 @@ scene.add(cube);
 
 // Line
 
-//create a blue LineBasicMaterial
-const lineMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
-const points = [];
-points.push(new THREE.Vector3(-10, 0, 0));
-points.push(new THREE.Vector3(0, 10, 0));
-points.push(new THREE.Vector3(10, 0, 0));
-
-const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-const line = new THREE.Line(lineGeometry, lineMaterial);
-//scene.add(line);
+// Line example (kept for reference) - not used to avoid unused variable errors
+// create a blue LineBasicMaterial
+// const lineMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
+// const points = [];
+// points.push(new THREE.Vector3(-10, 0, 0));
+// points.push(new THREE.Vector3(0, 10, 0));
+// points.push(new THREE.Vector3(10, 0, 0));
+// const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+// Line geometry prepared but not added to scene.
+// const line = new THREE.Line(lineGeometry, lineMaterial);
+// scene.add(line);
 
 // Sphere
 
