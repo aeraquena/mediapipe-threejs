@@ -200,7 +200,7 @@ async function predictWebcam() {
         const lm20 = primary && primary[20];
         const primaryDist = distance2D(lm19, lm20);
         handDistance = primaryDist;
-        drawDistanceBar(primaryDist);
+        //drawDistanceBar(primaryDist);
       }
 
       canvasCtx.restore();
