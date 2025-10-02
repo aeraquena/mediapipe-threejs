@@ -3,9 +3,9 @@ import {
   PoseLandmarker,
   FilesetResolver,
   DrawingUtils,
-  //HolisticLandmarker,
 } from "@mediapipe/tasks-vision";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import distance2D from "./utils/distance";
 
 /********************************************************************
@@ -152,7 +152,6 @@ async function predictWebcam() {
         const lm20 = primary && primary[20];
         const primaryDist = distance2D(lm19, lm20);
         handDistance = primaryDist;
-        //drawDistanceBar(primaryDist);
       }
 
       canvasCtx.restore();
@@ -181,6 +180,8 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(0, 0, 100);
 camera.lookAt(0, 0, 0);
+
+const controls = new OrbitControls(camera, renderer.domElement);
 
 const scene = new THREE.Scene();
 
