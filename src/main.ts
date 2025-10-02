@@ -3,8 +3,10 @@ import {
   PoseLandmarker,
   FilesetResolver,
   DrawingUtils,
+  //HolisticLandmarker,
 } from "@mediapipe/tasks-vision";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
+import distance2D from "./utils/distance";
 
 /********************************************************************
  * MediaPipe                                                        *
@@ -49,56 +51,6 @@ const canvasElement = document.getElementById(
 ) as HTMLCanvasElement;
 const canvasCtx = canvasElement.getContext("2d") as CanvasRenderingContext2D;
 const drawingUtils = new DrawingUtils(canvasCtx as CanvasRenderingContext2D);
-
-// Helper: 2D Euclidean distance for normalized coordinates (x,y in 0..1)
-function distance2D(
-  a: { x: number; y: number } | undefined | null,
-  b: { x: number; y: number } | undefined | null
-): number | null {
-  if (!a || !b) return null;
-  const dx = a.x - b.x;
-  const dy = a.y - b.y;
-  return Math.hypot(dx, dy);
-}
-
-// Draw a horizontal distance bar at the bottom of the canvas.
-// length is proportional to the normalized distance (0..1)
-function drawDistanceBar(
-  normalizedDistance: number | null,
-  opts: Partial<{ x: number; y: number; height: number; maxWidth: number }> = {}
-): void {
-  const {
-    x = 10,
-    y = canvasElement.height - 30,
-    height = 12,
-    maxWidth = canvasElement.width - 20,
-  } = opts;
-  const barWidth = Math.max(0, Math.min(1, normalizedDistance || 0)) * maxWidth;
-
-  // background
-  canvasCtx.fillStyle = "rgba(0,0,0,0.25)";
-  canvasCtx.fillRect(x, y, maxWidth, height);
-
-  // foreground (distance)
-  canvasCtx.fillStyle = "rgba(0,200,100,0.9)";
-  canvasCtx.fillRect(x, y, barWidth, height);
-
-  // border
-  canvasCtx.strokeStyle = "rgba(0,0,0,0.8)";
-  canvasCtx.lineWidth = 1;
-  canvasCtx.strokeRect(x, y, maxWidth, height);
-
-  // text
-  canvasCtx.fillStyle = "white";
-  canvasCtx.font = "12px Arial";
-  canvasCtx.fillText(
-    `dist: ${
-      normalizedDistance !== null ? normalizedDistance.toFixed(3) : "n/a"
-    }`,
-    x + 4,
-    y + height - 2
-  );
-}
 
 // Check if webcam access is supported.
 const hasGetUserMedia = (): boolean => !!navigator.mediaDevices?.getUserMedia;
