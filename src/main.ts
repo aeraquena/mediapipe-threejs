@@ -1,19 +1,13 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import {
-  PoseLandmarker,
-  FilesetResolver,
-  DrawingUtils,
-} from "@mediapipe/tasks-vision";
+import { PoseLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import distance2D from "./utils/distance";
 import * as threeHelper from "./utils/threeHelper";
+import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 
 /********************************************************************
  * MediaPipe                                                        *
  ********************************************************************/
-
-const demosSection = document.getElementById("demos") as HTMLElement;
 
 let poseLandmarker: PoseLandmarker | undefined = undefined;
 let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
@@ -22,25 +16,11 @@ let webcamRunning = false;
 const videoHeight = "360px";
 const videoWidth = "480px";
 
-// Before we can use PoseLandmarker class we must wait for it to finish
-// loading. Machine Learning models can be large and take a moment to
-// get everything needed to run.
-const createPoseLandmarker = async () => {
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
-  );
-  poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task`,
-      // https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task
-      delegate: "GPU",
-    },
-    runningMode: runningMode,
-    numPoses: 2,
-  });
-  demosSection.classList.remove("invisible");
-};
-createPoseLandmarker();
+// Wait for pose landmarker to finish loading
+poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
+  poseLandmarker,
+  runningMode
+);
 
 /***********************************************************
 // Continuously grab image from webcam stream and detect it.
@@ -149,9 +129,9 @@ async function predictWebcam() {
   }
 }
 
-/********************************************************************
- * Three.JS                                                         *
- ********************************************************************/
+/************
+ * Three.JS *
+ ************/
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
