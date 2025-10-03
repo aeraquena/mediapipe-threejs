@@ -97,6 +97,9 @@ async function predictWebcam() {
   if (lastVideoTime !== video.currentTime) {
     lastVideoTime = video.currentTime;
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
+      // On result, draw graphics
+      console.log(result);
+
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       for (const landmark of result.landmarks) {
