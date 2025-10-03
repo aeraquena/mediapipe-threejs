@@ -5,9 +5,9 @@ import distance2D from "./utils/distance";
 import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 
-/********************************************************************
- * MediaPipe                                                        *
- ********************************************************************/
+/*************
+ * MediaPipe *
+ *************/
 
 let poseLandmarker: PoseLandmarker | undefined = undefined;
 let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
@@ -16,7 +16,9 @@ let webcamRunning = false;
 const videoHeight = "360px";
 const videoWidth = "480px";
 
-// Wait for pose landmarker to finish loading
+let handDistance: number | null = 0;
+
+// Create and wait for pose landmarker to finish loading
 poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
   poseLandmarker,
   runningMode
@@ -80,8 +82,6 @@ function enableCam(_event?: Event): void {
 }
 
 let lastVideoTime = -1;
-
-let handDistance: number | null = 0;
 
 async function predictWebcam() {
   canvasElement.style.height = videoHeight;
