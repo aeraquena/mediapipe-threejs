@@ -161,7 +161,7 @@ const camera = threeHelper.addCamera();
 camera.position.set(0, 0, 100);
 camera.lookAt(0, 0, 0);
 
-new OrbitControls(camera, renderer.domElement);
+threeHelper.addOrbitControls(camera, renderer.domElement);
 
 const scene: THREE.Scene = new THREE.Scene();
 
