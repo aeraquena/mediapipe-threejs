@@ -1,12 +1,13 @@
 import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
   PoseLandmarker,
   FilesetResolver,
   DrawingUtils,
 } from "@mediapipe/tasks-vision";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import distance2D from "./utils/distance";
+import * as threeHelper from "./utils/threeHelper";
 
 /********************************************************************
  * MediaPipe                                                        *
@@ -116,7 +117,6 @@ async function predictWebcam() {
   if (lastVideoTime !== video.currentTime) {
     lastVideoTime = video.currentTime;
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
-      //console.log(result);
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       for (const landmark of result.landmarks) {
@@ -132,20 +132,6 @@ async function predictWebcam() {
 
       // Compute and log normalized 2D distance between landmark indices 19 and 20
       if (result.landmarks && result.landmarks.length) {
-        // Log for each pose
-        result.landmarks.forEach((poseLandmarks, i) => {
-          const lm19 = poseLandmarks[19];
-          const lm20 = poseLandmarks[20];
-          const dist = distance2D(lm19, lm20);
-          /*if (dist !== null) {
-            console.log(
-              `pose ${i} distance between landmarks 19 & 20: ${dist.toFixed(4)}`
-            );
-          } else {
-            console.log(`pose ${i} missing landmark 19 or 20`);
-          }*/
-        });
-
         // Draw a distance bar for the primary pose (pose 0)
         const primary = result.landmarks[0];
         const lm19 = primary && primary[19];
@@ -153,7 +139,6 @@ async function predictWebcam() {
         const primaryDist = distance2D(lm19, lm20);
         handDistance = primaryDist;
       }
-
       canvasCtx.restore();
     });
   }
@@ -172,38 +157,24 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const camera = new THREE.PerspectiveCamera(
-  45,
-  window.innerWidth / window.innerHeight,
-  1,
-  500
-);
+const camera = threeHelper.addCamera();
 camera.position.set(0, 0, 100);
 camera.lookAt(0, 0, 0);
 
-const controls = new OrbitControls(camera, renderer.domElement);
+new OrbitControls(camera, renderer.domElement);
 
-const scene = new THREE.Scene();
+const scene: THREE.Scene = new THREE.Scene();
 
-// Lighting
-
-// directional light
-const white = 0xffffff;
-const directionalLight = new THREE.DirectionalLight(white, 3);
-directionalLight.position.set(100, 0, 100);
-directionalLight.target.position.set(5, 5, 0);
+// Directional light
+const directionalLight = threeHelper.addDirectionalLight();
 scene.add(directionalLight);
 scene.add(directionalLight.target);
 
 // Cube
-
-const geometry = new THREE.BoxGeometry(4, 4, 4);
-const material = new THREE.MeshToonMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(geometry, material);
+const cube = threeHelper.addCube();
 scene.add(cube);
 
 // Animate the scene
-
 function animate() {
   cube.rotation.x += 0.01;
   cube.scale.x = handDistance ? handDistance * 10 : 0;
