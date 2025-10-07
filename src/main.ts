@@ -4,6 +4,7 @@ import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import distance2D from "./utils/distance";
 import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
+import * as tensorflow from "./tensorflow";
 
 /*************
  * MediaPipe *
@@ -13,7 +14,6 @@ let poseLandmarker: PoseLandmarker | undefined = undefined;
 let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 let enableWebcamButton: HTMLButtonElement | null = null;
 let trainBodyButton: HTMLButtonElement | null = null;
-let trainAIButton: HTMLButtonElement | null = null;
 let webcamRunning = false;
 const videoHeight = "360px";
 const videoWidth = "480px";
@@ -26,8 +26,13 @@ poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
   runningMode
 );
 
+// AI code
+
 let trainingData: any = [];
 let isTrainingBody = false; // press a button... stop after 1 second. Then I can record mouse movement for 5 seconds. (and this needs to be the same x,y... add to the data)
+
+let clientX: number;
+let clientY: number;
 
 /***********************************************************
 // Continuously grab image from webcam stream and detect it.
@@ -55,18 +60,6 @@ if (hasGetUserMedia()) {
 } else {
   console.warn("getUserMedia() is not supported by your browser");
 }
-
-// Train body button
-trainBodyButton = document.getElementById(
-  "trainBodyButton"
-) as HTMLButtonElement | null;
-trainBodyButton?.addEventListener("click", trainBody);
-
-// Train AI button
-trainAIButton = document.getElementById(
-  "trainAIButton"
-) as HTMLButtonElement | null;
-trainAIButton?.addEventListener("click", () => console.log("train ai!"));
 
 // Enable the live webcam view and start detection.
 function enableCam(_event?: Event): void {
@@ -98,21 +91,6 @@ function enableCam(_event?: Event): void {
     });
 }
 
-function trainBody() {
-  isTrainingBody = true;
-  trainingData = [];
-  if (trainBodyButton) {
-    trainBodyButton.innerText = "TRAINING BODY...";
-  }
-  setTimeout(() => {
-    isTrainingBody = false;
-    if (trainBodyButton) {
-      trainBodyButton.innerText = "TRAIN BODY";
-    }
-    console.log(trainingData);
-  }, 1000);
-}
-
 let lastVideoTime = -1;
 
 async function predictWebcam() {
@@ -135,13 +113,13 @@ async function predictWebcam() {
       // if training is happening!
       if (isTrainingBody) {
         trainingData.push({
-          handPosition: result.landmarks[0][19].x,
-          mouseX: 0, // TODO: Replace 0 with actual mouse X position
+          handY: result.landmarks[0][19].x, // X position of LEFT index finger on hand. TODO: Can add more
+          mouseX: clientX,
+          //mouseY: clientY,
         });
       }
 
       // Put some parts of results (primary 19) into a JSON file. lets do primary 19.x first...
-      // I mean we can extract it
 
       // THEN: Train the model
       // run() once - should be a button. Maybe when I'm finished dancing?
@@ -212,10 +190,32 @@ function animate() {
 }
 renderer.setAnimationLoop(animate);
 
-/* Mouse */
+/* AI code */
 
-let clientX;
-let clientY;
+// Train body button
+trainBodyButton = document.getElementById(
+  "trainBodyButton"
+) as HTMLButtonElement | null;
+trainBodyButton?.addEventListener("click", trainBody);
+
+function trainBody() {
+  isTrainingBody = true;
+  trainingData = [];
+  if (trainBodyButton) {
+    trainBodyButton.innerText = "TRAINING AI...";
+  }
+  setTimeout(() => {
+    isTrainingBody = false;
+    if (trainBodyButton) {
+      trainBodyButton.innerText = "TRAIN AI";
+    }
+    console.log(trainingData);
+    // TODO: TRAIN!!!!
+    tensorflow.run(trainingData);
+  }, 1000);
+}
+
+// Mouse
 document.addEventListener("mousemove", function (event) {
   // Get mouse position relative to the viewport
   clientX = event.clientX;
@@ -223,6 +223,7 @@ document.addEventListener("mousemove", function (event) {
 
   const pointer = document.getElementById("pointer");
   if (pointer) {
+    // TODO: AND, model predictions are NOT running
     pointer.style.top = clientY.toString() + "px";
     pointer.style.left = clientX.toString() + "px";
   }
@@ -231,6 +232,6 @@ document.addEventListener("mousemove", function (event) {
   //const pageX = event.pageX;
   //const pageY = event.pageY;
 
-  console.log(`Viewport: X=${clientX}, Y=${clientY}`);
+  //console.log(`Viewport: X=${clientX}, Y=${clientY}`);
   //console.log(`Document: X=${pageX}, Y=${pageY}`);
 });

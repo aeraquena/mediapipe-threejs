@@ -21,10 +21,6 @@
         </button>
         <button id="trainBodyButton" class="mdc-button mdc-button--raised">
           <span class="mdc-button__ripple"></span>
-          <span class="mdc-button__label">TRAIN BODY</span>
-        </button>
-        <button id="trainAIButton" class="mdc-button mdc-button--raised">
-          <span class="mdc-button__ripple"></span>
           <span class="mdc-button__label">TRAIN AI</span>
         </button>
 
@@ -47,6 +43,10 @@
     </section>
     <div id="app"></div>
     <div id="pointer"></div>
+    <!-- Import TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <!-- Import tfjs-vis -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
