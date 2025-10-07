@@ -30,6 +30,8 @@ let poseLandmarker: PoseLandmarker | undefined = undefined;
 let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 let enableWebcamButton: HTMLButtonElement | null = null;
 let trainBodyButton: HTMLButtonElement | null = null;
+let danceButton: HTMLButtonElement | null = null;
+
 let webcamRunning = false;
 const videoHeight = "360px";
 const videoWidth = "480px";
@@ -63,6 +65,9 @@ let trainingData: TrainingDatum[] = [];
 let mlMode = MLMode.IDLE;
 // TODO: Modes: Idle, Training, and Predicting
 let trainingDuration = 10000;
+
+let myModel: any;
+let myNormalizations: any;
 
 // The trained model and tensor metadata are returned from `run()` and
 // stored by callers when needed — no top-level `model`/`tfData` required.
@@ -153,6 +158,11 @@ async function predictWebcam() {
           mouseX: clientX,
           //mouseY: clientY,
         });
+      } else if (mlMode === MLMode.PREDICTING) {
+        console.log(
+          predictOne(myModel, result.landmarks[0][19].x, myNormalizations)
+        );
+        // lets let it DANCE
       }
 
       canvasCtx.save();
@@ -250,6 +260,12 @@ trainBodyButton = document.getElementById(
 ) as HTMLButtonElement | null;
 trainBodyButton?.addEventListener("click", trainBody);
 
+// Train body button
+danceButton = document.getElementById(
+  "danceButton"
+) as HTMLButtonElement | null;
+danceButton?.addEventListener("click", dance);
+
 function trainBody() {
   mlMode = MLMode.TRAINING;
   trainingData = [];
@@ -260,21 +276,29 @@ function trainBody() {
   startCountdown(Math.ceil(trainingDuration / 1000));
 
   setTimeout(async () => {
-    mlMode = MLMode.PREDICTING;
+    mlMode = MLMode.IDLE;
     if (trainBodyButton) {
       trainBodyButton.innerText = "TRAIN AI";
     }
     console.log(trainingData);
-    let result = await run(trainingData);
+    let result: any = await run(trainingData);
     console.log(result);
     // when this is finished... can we switch to predicting mode?
 
     // WE NEED TO AWAIT THIS... its not gonna be there
     // alternatively... pass it in...we have it... {model: x, tensorData: x}
 
+    myModel = result.model;
+    myNormalizations = result.tensorData;
+
     const yPred = predictOne(result.model, 0.5, result.tensorData);
     console.log("predicted y for hand x .5: ", yPred); // YAS QUEEN
   }, trainingDuration);
+}
+
+function dance() {
+  console.log("dance!");
+  mlMode = MLMode.PREDICTING;
 }
 
 // Mouse
@@ -331,10 +355,6 @@ export async function run(
   // Train the model
   await trainModel(model, inputs, labels);
   console.log("Done Training");
-
-  // declare to global variables
-  myModel = model;
-  myTfData = tensorData;
 
   // Make some predictions using the model and compare them to the
   // original data
