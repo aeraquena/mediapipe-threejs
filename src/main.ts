@@ -70,9 +70,6 @@ let trainingDuration = 10000;
 let clientX: number;
 let clientY: number;
 
-let myModel: any;
-let myTfData: NormalizationData;
-
 /***********************************************************
 // Continuously grab image from webcam stream and detect it.
 ************************************************************/
@@ -274,10 +271,9 @@ function trainBody() {
 
     // WE NEED TO AWAIT THIS... its not gonna be there
     // alternatively... pass it in...we have it... {model: x, tensorData: x}
-    if (myModel && myTfData) {
-      const yPred = predictOne(0.5);
-      console.log("predicted y for hand x .5: ", yPred); // YAS QUEEN
-    }
+
+    const yPred = predictOne(result.model, 0.5, result.tensorData);
+    console.log("predicted y for hand x .5: ", yPred); // YAS QUEEN
   }, trainingDuration);
 }
 
@@ -495,8 +491,8 @@ function testModel(
 
 // This was vibe coded
 // Normalize a single handX, run predict, un-normalize and return number
-export function predictOne(handX: number): number {
-  const { inputMax, inputMin, labelMin, labelMax } = myTfData;
+function predictOne(model, handX, normalizationData) {
+  const { inputMax, inputMin, labelMin, labelMax } = normalizationData;
 
   return tf.tidy(() => {
     // create a normalized tensor for the single input
@@ -506,10 +502,10 @@ export function predictOne(handX: number): number {
       .div(inputMax.sub(inputMin))
       .reshape([1, 1]);
     // predict (returns a Tensor)
-    const pred = myModel.predict(x) as any;
+    const pred = model.predict(x);
     // un-normalize prediction
-    const unNorm = pred.mul(labelMax.sub(labelMin)).add(labelMin) as any;
+    const unNorm = pred.mul(labelMax.sub(labelMin)).add(labelMin);
     // read single value
-    return unNorm.dataSync()[0] as number;
+    return unNorm.dataSync()[0];
   });
 }
