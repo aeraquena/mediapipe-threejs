@@ -29,7 +29,8 @@ poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
 // AI code
 
 let trainingData: any = [];
-let isTrainingBody = false; // press a button... stop after 1 second. Then I can record mouse movement for 5 seconds. (and this needs to be the same x,y... add to the data)
+let isTrainingBody = false;
+let trainingDuration = 10000;
 
 let clientX: number;
 let clientY: number;
@@ -210,9 +211,8 @@ function trainBody() {
       trainBodyButton.innerText = "TRAIN AI";
     }
     console.log(trainingData);
-    // TODO: TRAIN!!!!
     tensorflow.run(trainingData);
-  }, 1000);
+  }, trainingDuration);
 }
 
 // Mouse
