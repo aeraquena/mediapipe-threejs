@@ -28,8 +28,15 @@ poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
 
 // AI code
 
+const MLMode = {
+  TRAINING: "Training",
+  PREDICTING: "Predicting",
+  IDLE: "Idle",
+};
+
 let trainingData: any = [];
-let isTrainingBody = false;
+let mlMode = MLMode.IDLE;
+// TODO: Modes: Idle, Training, and Predicting
 let trainingDuration = 10000;
 
 let clientX: number;
@@ -112,18 +119,13 @@ async function predictWebcam() {
       //console.log(result);
 
       // if training is happening!
-      if (isTrainingBody) {
+      if (mlMode === MLMode.TRAINING) {
         trainingData.push({
           handY: result.landmarks[0][19].x, // X position of LEFT index finger on hand. TODO: Can add more
           mouseX: clientX,
           //mouseY: clientY,
         });
       }
-
-      // Put some parts of results (primary 19) into a JSON file. lets do primary 19.x first...
-
-      // THEN: Train the model
-      // run() once - should be a button. Maybe when I'm finished dancing?
 
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -200,13 +202,13 @@ trainBodyButton = document.getElementById(
 trainBodyButton?.addEventListener("click", trainBody);
 
 function trainBody() {
-  isTrainingBody = true;
+  mlMode = MLMode.TRAINING;
   trainingData = [];
   if (trainBodyButton) {
     trainBodyButton.innerText = "TRAINING AI...";
   }
   setTimeout(() => {
-    isTrainingBody = false;
+    mlMode = MLMode.IDLE;
     if (trainBodyButton) {
       trainBodyButton.innerText = "TRAIN AI";
     }

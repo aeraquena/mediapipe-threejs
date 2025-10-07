@@ -113,9 +113,9 @@ footer {
 }
 
 #pointer {
-  height: 20px;
-  width: 20px;
+  height: 40px;
+  width: 40px;
   background-color: red;
-  border-radius: 10px;
+  border-radius: 20px;
   position: absolute;
 }
