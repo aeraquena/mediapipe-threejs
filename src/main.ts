@@ -72,8 +72,11 @@ let myNormalizations: any;
 // The trained model and tensor metadata are returned from `run()` and
 // stored by callers when needed — no top-level `model`/`tfData` required.
 
+// Real mouse movements
 let clientX: number;
 let clientY: number;
+
+let predictedMouseY: number;
 
 /***********************************************************
 // Continuously grab image from webcam stream and detect it.
@@ -159,9 +162,12 @@ async function predictWebcam() {
           //mouseY: clientY,
         });
       } else if (mlMode === MLMode.PREDICTING) {
-        console.log(
-          predictOne(myModel, result.landmarks[0][19].x, myNormalizations)
+        predictedMouseY = predictOne(
+          myModel,
+          result.landmarks[0][19].x,
+          myNormalizations
         );
+        console.log(predictedMouseY);
         // lets let it DANCE
       }
 
@@ -291,8 +297,8 @@ function trainBody() {
     myModel = result.model;
     myNormalizations = result.tensorData;
 
-    const yPred = predictOne(result.model, 0.5, result.tensorData);
-    console.log("predicted y for hand x .5: ", yPred); // YAS QUEEN
+    //predictedMouseY = predictOne(result.model, 0.5, result.tensorData);
+    //console.log("predicted y for hand x .5: ", predictedMouseY); // YAS QUEEN
   }, trainingDuration);
 }
 
@@ -309,9 +315,15 @@ document.addEventListener("mousemove", function (event) {
 
   const pointer = document.getElementById("pointer");
   if (pointer) {
-    // TODO: AND, model predictions are NOT running
-    // if mlMode === Predicting, do the predicted one
-    pointer.style.top = clientY.toString() + "px";
+    if (mlMode !== MLMode.PREDICTING) {
+      // TODO: AND, model predictions are NOT running
+      // if mlMode === Predicting, do the predicted one
+      pointer.style.top = clientY.toString() + "px";
+    } else {
+      pointer.style.top = predictedMouseY.toString() + "px";
+      // it seems to be constrainted to 1 point
+      // set a glooobal variable for where y should be
+    }
     pointer.style.left = clientX.toString() + "px";
   }
 });
@@ -466,13 +478,13 @@ function testModel(
   // that we did earlier.
   const [xs, preds] = tf.tidy(() => {
     const xsNorm = tf.linspace(0, 1, 100); // this is a tensor, 100 random values between 0 and 1
-    console.log("xsNorm");
-    console.log(xsNorm);
+    //console.log("xsNorm");
+    //console.log(xsNorm);
     const predictions = model.predict(xsNorm.reshape([100, 1]));
     // The tf.reshape() function is used to reshape a given tensor with the specified shape.
     // We need an input tensor. How do we make a tensor from number
-    console.log("predictions");
-    console.log(predictions);
+    //console.log("predictions");
+    //console.log(predictions);
 
     const unNormXs = xsNorm.mul(inputMax.sub(inputMin)).add(inputMin);
 
@@ -487,8 +499,8 @@ function testModel(
   const predictedPoints = xsArr.map((val: number, i: number) => {
     return { x: val, y: predsArr[i] };
   });
-  console.log("predicted points: ");
-  console.log(predictedPoints);
+  //console.log("predicted points: ");
+  //console.log(predictedPoints);
 
   const originalPoints = inputData.map((d: TrainingDatum) => ({
     x: d.handX,
