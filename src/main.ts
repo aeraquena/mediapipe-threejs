@@ -200,25 +200,9 @@ function startCountdown(seconds: number): void {
   let countdownEl = document.getElementById(
     "countdown"
   ) as HTMLDivElement | null;
-  if (!countdownEl) {
-    countdownEl = document.createElement("div");
-    countdownEl.id = "countdown";
-    Object.assign(countdownEl.style, {
-      position: "fixed",
-      top: "10px",
-      right: "10px",
-      padding: "8px 12px",
-      background: "rgba(0,0,0,0.7)",
-      color: "white",
-      fontSize: "20px",
-      fontFamily: "sans-serif",
-      borderRadius: "4px",
-      zIndex: "9999",
-    } as Partial<CSSStyleDeclaration>);
-    document.body.appendChild(countdownEl);
+  if (countdownEl) {
+    countdownEl.textContent = remaining.toString();
   }
-
-  countdownEl.textContent = remaining.toString();
 
   const intervalId = window.setInterval(() => {
     remaining -= 1;
