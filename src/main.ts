@@ -157,17 +157,22 @@ async function predictWebcam() {
       // if training is happening!
       if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
         trainingData.push({
-          handY: result.landmarks[0][19].x, // X position of LEFT index finger on hand. TODO: Can add more
-          mouseX: clientX,
+          handX: result.landmarks[0][19].x, // X position of LEFT index finger on hand. TODO: Can add more
+          mouseY: clientY, // TODO: Rename this
           //mouseY: clientY,
         });
       } else if (mlMode === MLMode.PREDICTING) {
         predictedMouseY = predictOne(
           myModel,
-          result.landmarks[0][19].x,
+          result.landmarks[0] ? result.landmarks[0][19].x : 0, // is this normalized?
           myNormalizations
         );
-        console.log(predictedMouseY);
+        console.log(
+          "x: ",
+          result.landmarks[0] ? result.landmarks[0][19].x : 0,
+          "y:",
+          predictedMouseY
+        );
         // lets let it DANCE
       }
 
@@ -305,6 +310,7 @@ function trainBody() {
 function dance() {
   console.log("dance!");
   mlMode = MLMode.PREDICTING;
+  setInterval(movePointerY, 5);
 }
 
 // Mouse
@@ -319,14 +325,21 @@ document.addEventListener("mousemove", function (event) {
       // TODO: AND, model predictions are NOT running
       // if mlMode === Predicting, do the predicted one
       pointer.style.top = clientY.toString() + "px";
-    } else {
+    } /* else {
       pointer.style.top = predictedMouseY.toString() + "px";
       // it seems to be constrainted to 1 point
       // set a glooobal variable for where y should be
-    }
+    }*/
     pointer.style.left = clientX.toString() + "px";
   }
 });
+
+function movePointerY() {
+  const pointer = document.getElementById("pointer");
+  if (pointer && mlMode === MLMode.PREDICTING) {
+    pointer.style.top = predictedMouseY.toString() + "px";
+  }
+}
 
 /* Tensorflow */
 
@@ -336,8 +349,8 @@ export async function run(
   // Load and plot the original input data that we are going to train on.
   //const data = await getData();
   const values = data.map((d: TrainingDatum) => ({
-    x: d.handY,
-    y: d.mouseX,
+    x: d.handX,
+    y: d.mouseY,
   }));
 
   tfvis.render.scatterplot(
@@ -405,8 +418,8 @@ function convertToTensor(data: TrainingDatum[]): NormalizationData {
     tf.util.shuffle(data);
 
     // Step 2. Convert data to Tensor
-    const inputs = data.map((d: TrainingDatum) => d.handY ?? 0);
-    const labels = data.map((d: TrainingDatum) => d.mouseX ?? 0);
+    const inputs = data.map((d: TrainingDatum) => d.handX ?? 0);
+    const labels = data.map((d: TrainingDatum) => d.mouseY ?? 0);
 
     const inputTensor = tf.tensor2d(inputs, [inputs.length, 1]);
     const labelTensor = tf.tensor2d(labels, [labels.length, 1]);
