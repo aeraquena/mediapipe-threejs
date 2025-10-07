@@ -195,6 +195,43 @@ renderer.setAnimationLoop(animate);
 
 /* AI code */
 
+function startCountdown(seconds: number): void {
+  let remaining = seconds;
+  let countdownEl = document.getElementById(
+    "countdown"
+  ) as HTMLDivElement | null;
+  if (!countdownEl) {
+    countdownEl = document.createElement("div");
+    countdownEl.id = "countdown";
+    Object.assign(countdownEl.style, {
+      position: "fixed",
+      top: "10px",
+      right: "10px",
+      padding: "8px 12px",
+      background: "rgba(0,0,0,0.7)",
+      color: "white",
+      fontSize: "20px",
+      fontFamily: "sans-serif",
+      borderRadius: "4px",
+      zIndex: "9999",
+    } as Partial<CSSStyleDeclaration>);
+    document.body.appendChild(countdownEl);
+  }
+
+  countdownEl.textContent = remaining.toString();
+
+  const intervalId = window.setInterval(() => {
+    remaining -= 1;
+    countdownEl!.textContent = remaining.toString();
+    if (remaining <= 0) {
+      clearInterval(intervalId);
+      setTimeout(() => {
+        countdownEl!.remove();
+      }, 1000);
+    }
+  }, 1000);
+}
+
 // Train body button
 trainBodyButton = document.getElementById(
   "trainBodyButton"
@@ -207,6 +244,9 @@ function trainBody() {
   if (trainBodyButton) {
     trainBodyButton.innerText = "TRAINING AI...";
   }
+  // start a countdown that matches trainingDuration (in ms)
+  startCountdown(Math.ceil(trainingDuration / 1000));
+
   setTimeout(() => {
     mlMode = MLMode.IDLE;
     if (trainBodyButton) {
