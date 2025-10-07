@@ -26,7 +26,7 @@ poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
   runningMode
 );
 
-let trainingData = [];
+let trainingData: any = [];
 let isTrainingBody = false; // press a button... stop after 1 second. Then I can record mouse movement for 5 seconds. (and this needs to be the same x,y... add to the data)
 
 /***********************************************************
@@ -100,6 +100,7 @@ function enableCam(_event?: Event): void {
 
 function trainBody() {
   isTrainingBody = true;
+  trainingData = [];
   if (trainBodyButton) {
     trainBodyButton.innerText = "TRAINING BODY...";
   }
@@ -108,6 +109,7 @@ function trainBody() {
     if (trainBodyButton) {
       trainBodyButton.innerText = "TRAIN BODY";
     }
+    console.log(trainingData);
   }, 1000);
 }
 
@@ -128,14 +130,17 @@ async function predictWebcam() {
     lastVideoTime = video.currentTime;
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
       // On result, draw graphics
-      console.log(result);
+      //console.log(result);
 
       // if training is happening!
       if (isTrainingBody) {
-        trainingData.push(result.landmarks[0]);
+        trainingData.push({
+          handPosition: result.landmarks[0][19].x,
+          mouseX: 0, // TODO: Replace 0 with actual mouse X position
+        });
       }
 
-      // Put some parts of results (primary 19) into a JSON file
+      // Put some parts of results (primary 19) into a JSON file. lets do primary 19.x first...
       // I mean we can extract it
 
       // THEN: Train the model
@@ -202,6 +207,30 @@ scene.add(cube);
 function animate() {
   cube.rotation.x += 0.01;
   cube.scale.x = handDistance ? handDistance * 10 : 0;
-  renderer.render(scene, camera);
+  // Commented out for now
+  //renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
+
+/* Mouse */
+
+let clientX;
+let clientY;
+document.addEventListener("mousemove", function (event) {
+  // Get mouse position relative to the viewport
+  clientX = event.clientX;
+  clientY = event.clientY;
+
+  const pointer = document.getElementById("pointer");
+  if (pointer) {
+    pointer.style.top = clientY.toString() + "px";
+    pointer.style.left = clientX.toString() + "px";
+  }
+
+  // Get mouse position relative to the document
+  //const pageX = event.pageX;
+  //const pageY = event.pageY;
+
+  console.log(`Viewport: X=${clientX}, Y=${clientY}`);
+  //console.log(`Document: X=${pageX}, Y=${pageY}`);
+});
