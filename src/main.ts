@@ -232,12 +232,15 @@ function trainBody() {
   startCountdown(Math.ceil(trainingDuration / 1000));
 
   setTimeout(() => {
-    mlMode = MLMode.IDLE;
+    mlMode = MLMode.PREDICTING;
     if (trainBodyButton) {
       trainBodyButton.innerText = "TRAIN AI";
     }
     console.log(trainingData);
-    tensorflow.run(trainingData);
+    let result = tensorflow.run(trainingData);
+    console.log("tensorflow model and data:");
+    console.log(result); // it's a promise
+    // when this is finished... can we switch to predicting mode?
   }, trainingDuration);
 }
 
@@ -250,14 +253,8 @@ document.addEventListener("mousemove", function (event) {
   const pointer = document.getElementById("pointer");
   if (pointer) {
     // TODO: AND, model predictions are NOT running
+    // if mlMode === Predicting, do the predicted one
     pointer.style.top = clientY.toString() + "px";
     pointer.style.left = clientX.toString() + "px";
   }
-
-  // Get mouse position relative to the document
-  //const pageX = event.pageX;
-  //const pageY = event.pageY;
-
-  //console.log(`Viewport: X=${clientX}, Y=${clientY}`);
-  //console.log(`Document: X=${pageX}, Y=${pageY}`);
 });
