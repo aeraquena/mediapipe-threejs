@@ -31,6 +31,7 @@ let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 let enableWebcamButton: HTMLButtonElement | null = null;
 let trainBodyButton: HTMLButtonElement | null = null;
 let danceButton: HTMLButtonElement | null = null;
+let doneMsg: any | null = null;
 
 let webcamRunning = false;
 const videoHeight = "360px";
@@ -63,7 +64,6 @@ type TrainingDatum = {
 
 let trainingData: TrainingDatum[] = [];
 let mlMode = MLMode.IDLE;
-// TODO: Modes: Idle, Training, and Predicting
 let trainingDuration = 10000;
 
 let myModel: any;
@@ -78,9 +78,9 @@ let clientY: number;
 
 let predictedMouseY: number;
 
-/***********************************************************
-// Continuously grab image from webcam stream and detect it.
-************************************************************/
+/***********************************************************************
+// MediaPipe: Continuously grab image from webcam stream and detect it.
+************************************************************************/
 
 const video = document.getElementById("webcam") as HTMLVideoElement;
 const canvasElement = document.getElementById(
@@ -114,11 +114,10 @@ function enableCam(_event?: Event): void {
 
   if (webcamRunning === true) {
     webcamRunning = false;
-    if (enableWebcamButton) enableWebcamButton.innerText = "ENABLE PREDICTIONS";
+    if (enableWebcamButton) enableWebcamButton.innerText = "ENABLE WEBCAM";
   } else {
     webcamRunning = true;
-    if (enableWebcamButton)
-      enableWebcamButton.innerText = "DISABLE PREDICTIONS";
+    if (enableWebcamButton) enableWebcamButton.innerText = "DISABLE WEBCAM";
   }
 
   // getUsermedia parameters.
@@ -167,13 +166,12 @@ async function predictWebcam() {
           result.landmarks[0] ? result.landmarks[0][19].x : 0, // is this normalized?
           myNormalizations
         );
-        console.log(
+        /*console.log(
           "x: ",
           result.landmarks[0] ? result.landmarks[0][19].x : 0,
           "y:",
           predictedMouseY
-        );
-        // lets let it DANCE
+        );*/
       }
 
       canvasCtx.save();
@@ -277,6 +275,8 @@ danceButton = document.getElementById(
 ) as HTMLButtonElement | null;
 danceButton?.addEventListener("click", dance);
 
+doneMsg = document.getElementById("doneTraining") as HTMLCanvasElement;
+
 function trainBody() {
   mlMode = MLMode.TRAINING;
   trainingData = [];
@@ -291,9 +291,9 @@ function trainBody() {
     if (trainBodyButton) {
       trainBodyButton.innerText = "TRAIN AI";
     }
-    console.log(trainingData);
     let result: any = await run(trainingData);
-    console.log(result);
+
+    doneMsg.style.display = "block";
     // when this is finished... can we switch to predicting mode?
 
     // WE NEED TO AWAIT THIS... its not gonna be there
@@ -308,7 +308,6 @@ function trainBody() {
 }
 
 function dance() {
-  console.log("dance!");
   mlMode = MLMode.PREDICTING;
   setInterval(movePointerY, 5);
 }
@@ -337,7 +336,9 @@ document.addEventListener("mousemove", function (event) {
 function movePointerY() {
   const pointer = document.getElementById("pointer");
   if (pointer && mlMode === MLMode.PREDICTING) {
-    pointer.style.top = predictedMouseY.toString() + "px";
+    pointer.style.top = predictedMouseY
+      ? predictedMouseY.toString() + "px"
+      : "0px";
   }
 }
 
@@ -374,12 +375,8 @@ export async function run(
   const tensorData = convertToTensor(data);
   const { inputs, labels } = tensorData;
 
-  console.log("tensor data");
-  console.log(tensorData);
-
   // Train the model
   await trainModel(model, inputs, labels);
-  console.log("Done Training");
 
   // Make some predictions using the model and compare them to the
   // original data
@@ -491,13 +488,8 @@ function testModel(
   // that we did earlier.
   const [xs, preds] = tf.tidy(() => {
     const xsNorm = tf.linspace(0, 1, 100); // this is a tensor, 100 random values between 0 and 1
-    //console.log("xsNorm");
-    //console.log(xsNorm);
     const predictions = model.predict(xsNorm.reshape([100, 1]));
     // The tf.reshape() function is used to reshape a given tensor with the specified shape.
-    // We need an input tensor. How do we make a tensor from number
-    //console.log("predictions");
-    //console.log(predictions);
 
     const unNormXs = xsNorm.mul(inputMax.sub(inputMin)).add(inputMin);
 
@@ -512,8 +504,6 @@ function testModel(
   const predictedPoints = xsArr.map((val: number, i: number) => {
     return { x: val, y: predsArr[i] };
   });
-  //console.log("predicted points: ");
-  //console.log(predictedPoints);
 
   const originalPoints = inputData.map((d: TrainingDatum) => ({
     x: d.handX,
