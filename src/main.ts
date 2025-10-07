@@ -150,7 +150,7 @@ async function predictWebcam() {
       //console.log(result);
 
       // if training is happening!
-      if (mlMode === MLMode.TRAINING) {
+      if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
         trainingData.push({
           handY: result.landmarks[0][19].x, // X position of LEFT index finger on hand. TODO: Can add more
           mouseX: clientX,
@@ -262,16 +262,22 @@ function trainBody() {
   // start a countdown that matches trainingDuration (in ms)
   startCountdown(Math.ceil(trainingDuration / 1000));
 
-  setTimeout(() => {
+  setTimeout(async () => {
     mlMode = MLMode.PREDICTING;
     if (trainBodyButton) {
       trainBodyButton.innerText = "TRAIN AI";
     }
     console.log(trainingData);
-    let result = run(trainingData);
-    console.log("tensorflow model and data:");
-    console.log(result); // it's a promise
+    let result = await run(trainingData);
+    console.log(result);
     // when this is finished... can we switch to predicting mode?
+
+    // WE NEED TO AWAIT THIS... its not gonna be there
+    // alternatively... pass it in...we have it... {model: x, tensorData: x}
+    if (myModel && myTfData) {
+      const yPred = predictOne(0.5);
+      console.log("predicted y for hand x .5: ", yPred); // YAS QUEEN
+    }
   }, trainingDuration);
 }
 
@@ -338,8 +344,8 @@ export async function run(
   // original data
   testModel(model, data, tensorData);
 
-  const yPred = predictOne(model, 0.5, tensorData);
-  console.log("predicted y for hand x .5: ", yPred);
+  // Return the trained model and normalization data to callers.
+  return { model, tensorData };
 }
 
 // Define model architecture
@@ -489,12 +495,8 @@ function testModel(
 
 // This was vibe coded
 // Normalize a single handX, run predict, un-normalize and return number
-function predictOne(
-  model: any,
-  handX: number,
-  normalizationData: NormalizationData
-): number {
-  const { inputMax, inputMin, labelMin, labelMax } = normalizationData;
+export function predictOne(handX: number): number {
+  const { inputMax, inputMin, labelMin, labelMax } = myTfData;
 
   return tf.tidy(() => {
     // create a normalized tensor for the single input
@@ -504,7 +506,7 @@ function predictOne(
       .div(inputMax.sub(inputMin))
       .reshape([1, 1]);
     // predict (returns a Tensor)
-    const pred = model.predict(x) as any;
+    const pred = myModel.predict(x) as any;
     // un-normalize prediction
     const unNorm = pred.mul(labelMax.sub(labelMin)).add(labelMin) as any;
     // read single value
