@@ -12,6 +12,8 @@ import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 let poseLandmarker: PoseLandmarker | undefined = undefined;
 let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 let enableWebcamButton: HTMLButtonElement | null = null;
+let trainBodyButton: HTMLButtonElement | null = null;
+let trainAIButton: HTMLButtonElement | null = null;
 let webcamRunning = false;
 const videoHeight = "360px";
 const videoWidth = "480px";
@@ -23,6 +25,9 @@ poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
   poseLandmarker,
   runningMode
 );
+
+let trainingData = [];
+let isTrainingBody = false; // press a button... stop after 1 second. Then I can record mouse movement for 5 seconds. (and this needs to be the same x,y... add to the data)
 
 /***********************************************************
 // Continuously grab image from webcam stream and detect it.
@@ -50,6 +55,18 @@ if (hasGetUserMedia()) {
 } else {
   console.warn("getUserMedia() is not supported by your browser");
 }
+
+// Train body button
+trainBodyButton = document.getElementById(
+  "trainBodyButton"
+) as HTMLButtonElement | null;
+trainBodyButton?.addEventListener("click", trainBody);
+
+// Train AI button
+trainAIButton = document.getElementById(
+  "trainAIButton"
+) as HTMLButtonElement | null;
+trainAIButton?.addEventListener("click", () => console.log("train ai!"));
 
 // Enable the live webcam view and start detection.
 function enableCam(_event?: Event): void {
@@ -81,6 +98,19 @@ function enableCam(_event?: Event): void {
     });
 }
 
+function trainBody() {
+  isTrainingBody = true;
+  if (trainBodyButton) {
+    trainBodyButton.innerText = "TRAINING BODY...";
+  }
+  setTimeout(() => {
+    isTrainingBody = false;
+    if (trainBodyButton) {
+      trainBodyButton.innerText = "TRAIN BODY";
+    }
+  }, 1000);
+}
+
 let lastVideoTime = -1;
 
 async function predictWebcam() {
@@ -99,6 +129,17 @@ async function predictWebcam() {
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
       // On result, draw graphics
       console.log(result);
+
+      // if training is happening!
+      if (isTrainingBody) {
+        trainingData.push(result.landmarks[0]);
+      }
+
+      // Put some parts of results (primary 19) into a JSON file
+      // I mean we can extract it
+
+      // THEN: Train the model
+      // run() once - should be a button. Maybe when I'm finished dancing?
 
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
