@@ -144,3 +144,7 @@ footer {
   top: 530px;
   display: none;
 }
+
+#liveView {
+  white-space: nowrap;
+}
