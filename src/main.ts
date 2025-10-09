@@ -4,6 +4,7 @@ import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import distance2D from "./utils/distance";
 import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
+import { PulseOscillator, Filter } from "tone";
 //import * as tensorflow from "./tensorflow";
 
 // TensorFlow.js and tfjs-vis are loaded as globals in the demo environment.
@@ -31,6 +32,7 @@ let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 let enableWebcamButton: HTMLButtonElement | null = null;
 let trainBodyButton: HTMLButtonElement | null = null;
 let danceButton: HTMLButtonElement | null = null;
+let singButton: HTMLButtonElement | null = null;
 let doneMsg: any | null = null;
 
 let webcamRunning = false;
@@ -77,6 +79,26 @@ let clientX: number;
 let clientY: number;
 
 let predictedMouseY: number;
+
+/* Tone.js setup */
+
+// saw wave Oscillator with PWM
+const osc = new PulseOscillator(260, 0.37); // ultimate output of sound
+// to low-pass filter
+const filter = new Filter(275, "lowpass").toDestination();
+osc.connect(filter);
+
+// press sing button
+function sing(): void {
+  osc.start();
+}
+
+// react to hand movements
+function tune(handPosition: number): void {
+  osc.set({
+    frequency: 100 + handPosition * 400, // 100-500
+  });
+}
 
 /***********************************************************************
 // MediaPipe: Continuously grab image from webcam stream and detect it.
@@ -151,7 +173,14 @@ async function predictWebcam() {
     lastVideoTime = video.currentTime;
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
       // On result, draw graphics
-      //console.log(result);
+
+      // TONE!
+
+      console.log(result.landmarks[0][19].x);
+      try {
+        tune(result.landmarks[0] ? result.landmarks[0][19]?.x : 0.5);
+      } catch {}
+      // sometimes it cant find the hand!
 
       // if training is happening!
       if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
@@ -274,6 +303,10 @@ danceButton = document.getElementById(
   "danceButton"
 ) as HTMLButtonElement | null;
 danceButton?.addEventListener("click", dance);
+
+// SING button
+singButton = document.getElementById("singButton") as HTMLButtonElement | null;
+singButton?.addEventListener("click", sing);
 
 doneMsg = document.getElementById("doneTraining") as HTMLCanvasElement;
 
