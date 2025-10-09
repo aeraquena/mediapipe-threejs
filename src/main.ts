@@ -78,17 +78,19 @@ let myNormalizations: any;
 let clientX: number;
 let clientY: number;
 
+let frequency: number = 260;
+
 let predictedMouseY: number;
 
 /* Tone.js setup */
 
 // saw wave Oscillator with PWM
-const osc = new PulseOscillator(260, 0.37); // ultimate output of sound
+const osc = new PulseOscillator(frequency, 0.37); // ultimate output of sound
 // to low-pass filter
 const filter = new Filter(275, "lowpass").toDestination();
 osc.connect(filter);
 
-// press sing button
+// press sing buftton
 function sing(): void {
   osc.start();
 }
@@ -98,6 +100,10 @@ function tune(handPosition: number): void {
   osc.set({
     frequency: 100 + handPosition * 400, // 100-500
   });
+}
+
+function setFreq(newFreq: number) {
+  osc.set({ frequency: newFreq });
 }
 
 /***********************************************************************
@@ -309,6 +315,15 @@ singButton = document.getElementById("singButton") as HTMLButtonElement | null;
 singButton?.addEventListener("click", sing);
 
 doneMsg = document.getElementById("doneTraining") as HTMLCanvasElement;
+
+// slider
+function setupSlider(slider: HTMLInputElement) {
+  slider.addEventListener("input", () => {
+    setFreq(parseFloat(slider.value));
+  });
+}
+
+setupSlider(document.querySelector<HTMLInputElement>("#freq")!);
 
 function trainBody() {
   mlMode = MLMode.TRAINING;
