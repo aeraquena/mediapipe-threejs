@@ -103,6 +103,7 @@ function tune(handPosition: number): void {
 }
 
 function setFreq(newFreq: number) {
+  console.log("setFreq: ", newFreq);
   osc.set({ frequency: newFreq });
 }
 
@@ -182,24 +183,26 @@ async function predictWebcam() {
 
       // TONE!
 
-      console.log(result.landmarks[0][19].x);
-      try {
+      //console.log(result.landmarks[0][19].x);
+      /*try {
         tune(result.landmarks[0] ? result.landmarks[0][19]?.x : 0.5);
-      } catch {}
+      } catch {}*/
       // sometimes it cant find the hand!
 
       // if training is happening!
       if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
         trainingData.push({
           handX: result.landmarks[0][19].x, // X position of LEFT index finger on hand. TODO: Can add more
-          mouseY: clientY, // TODO: Rename this
+          mouseY: frequency, //clientY, // TODO: Rename this
           //mouseY: clientY,
         });
       } else if (mlMode === MLMode.PREDICTING) {
-        predictedMouseY = predictOne(
-          myModel,
-          result.landmarks[0] ? result.landmarks[0][19].x : 0, // is this normalized?
-          myNormalizations
+        setFreq(
+          predictOne(
+            myModel,
+            result.landmarks[0] ? result.landmarks[0][19].x : 0, // is this normalized?
+            myNormalizations
+          )
         );
         /*console.log(
           "x: ",
@@ -319,7 +322,7 @@ doneMsg = document.getElementById("doneTraining") as HTMLCanvasElement;
 // slider
 function setupSlider(slider: HTMLInputElement) {
   slider.addEventListener("input", () => {
-    setFreq(parseFloat(slider.value));
+    frequency = parseFloat(slider.value);
   });
 }
 
@@ -589,6 +592,8 @@ function predictOne(model, handX, normalizationData) {
     // un-normalize prediction
     const unNorm = pred.mul(labelMax.sub(labelMin)).add(labelMin);
     // read single value
+    console.log("predict one");
+    console.log(unNorm.dataSync()[0]);
     return unNorm.dataSync()[0];
   });
 }
