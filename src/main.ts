@@ -388,14 +388,28 @@ export async function run(
 
 // Define model architecture
 function createModel() {
-  // Create a sequential model
+  // Create a small MLP with a mix of linear and ReLU layers.
+  // Input: single scalar (hand X). Output: single scalar (predicted mouse Y).
   const model = tf.sequential();
 
-  // Add a single input layer
-  model.add(tf.layers.dense({ inputShape: [1], units: 1, useBias: true }));
+  // First hidden layer: expand to a richer representation and apply non-linearity
+  model.add(
+    tf.layers.dense({
+      inputShape: [1],
+      units: 16,
+      activation: "relu",
+      useBias: true,
+    })
+  );
 
-  // Add an output layer
-  model.add(tf.layers.dense({ units: 1, useBias: true }));
+  // Second hidden layer: narrower representation
+  model.add(tf.layers.dense({ units: 8, activation: "relu", useBias: true }));
+
+  // Third hidden layer: smaller feature set
+  model.add(tf.layers.dense({ units: 4, activation: "relu", useBias: true }));
+
+  // Final output layer: linear activation for regression
+  model.add(tf.layers.dense({ units: 1, activation: "linear", useBias: true }));
 
   return model;
 }
@@ -526,7 +540,11 @@ function testModel(
 
 // This was vibe coded
 // Normalize a single handX, run predict, un-normalize and return number
-function predictOne(model, handX, normalizationData) {
+function predictOne(
+  model: any,
+  handX: number,
+  normalizationData: NormalizationData
+): number {
   const { inputMax, inputMin, labelMin, labelMax } = normalizationData;
 
   return tf.tidy(() => {
@@ -537,10 +555,10 @@ function predictOne(model, handX, normalizationData) {
       .div(inputMax.sub(inputMin))
       .reshape([1, 1]);
     // predict (returns a Tensor)
-    const pred = model.predict(x);
+    const pred = model.predict(x) as any;
     // un-normalize prediction
-    const unNorm = pred.mul(labelMax.sub(labelMin)).add(labelMin);
+    const unNorm = pred.mul(labelMax.sub(labelMin)).add(labelMin) as any;
     // read single value
-    return unNorm.dataSync()[0];
+    return unNorm.dataSync()[0] as number;
   });
 }
