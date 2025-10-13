@@ -8,6 +8,7 @@ import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 declare const tf: any;
 declare const tfvis: any;
 
+// Normalization / tensor metadata returned by convertToTensor
 type NormalizationData = {
   inputs: any;
   labels: any;
@@ -28,7 +29,7 @@ let trainBodyButton: HTMLButtonElement | null = null;
 let danceButton: HTMLButtonElement | null = null;
 let doneMsg: any | null = null;
 let countdownEl: HTMLDivElement | null = null;
-let recordingPhase: "idle" | "person1" | "person2" = "idle";
+let recordingPhase: "idle" | "person1" | "person2" = "idle"; // TODO: Integrate with MLMode
 
 let webcamRunning = false;
 const videoHeight = "360px";
@@ -36,12 +37,14 @@ const videoWidth = "480px";
 
 let handDistance: number | null = 0;
 
+// Create and wait for pose landmarker to finish loading
 poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
   poseLandmarker,
   runningMode
 );
 
 // AI code
+// TODO: Integrate with recordingPhase? "person1", "person2"?
 const MLMode = {
   TRAINING: "Training",
   PREDICTING: "Predicting",
@@ -54,6 +57,7 @@ type PoseDatum = {
   person2Pose: number[]; // 66D: flatten x,y for all 33 landmarks
 };
 
+// Array of 66D poses per person
 let person1Poses: number[][] = [];
 let person2Poses: number[][] = [];
 let mlMode = MLMode.IDLE;
@@ -75,8 +79,11 @@ const canvasElement = document.getElementById(
 const canvasCtx = canvasElement.getContext("2d") as CanvasRenderingContext2D;
 const drawingUtils = new DrawingUtils(canvasCtx as CanvasRenderingContext2D);
 
+// Check if webcam access is supported.
 const hasGetUserMedia = (): boolean => !!navigator.mediaDevices?.getUserMedia;
 
+// If webcam supported, add event listener to button for when user
+// wants to activate it.
 if (hasGetUserMedia()) {
   enableWebcamButton = document.getElementById(
     "webcamButton"
@@ -88,6 +95,7 @@ if (hasGetUserMedia()) {
   console.warn("getUserMedia() is not supported by your browser");
 }
 
+// Enable the live webcam view and start detection.
 function enableCam(_event?: Event): void {
   if (!poseLandmarker) {
     console.log("Wait! poseLandmaker not loaded yet.");
@@ -102,10 +110,12 @@ function enableCam(_event?: Event): void {
     if (enableWebcamButton) enableWebcamButton.innerText = "DISABLE WEBCAM";
   }
 
+  // getUsermedia parameters.
   const constraints: MediaStreamConstraints = {
     video: true,
   };
 
+  // Activate the webcam stream.
   navigator.mediaDevices
     .getUserMedia(constraints)
     .then((stream: MediaStream) => {
@@ -132,6 +142,7 @@ async function predictWebcam() {
   canvasElement.style.width = videoWidth;
   video.style.width = videoWidth;
 
+  // Now let's start detecting the stream.
   if (runningMode === "IMAGE") {
     runningMode = "VIDEO";
     await poseLandmarker!.setOptions({ runningMode: "VIDEO" });
@@ -206,7 +217,7 @@ scene.add(directionalLight);
 scene.add(directionalLight.target);
 
 const cube = threeHelper.addCube();
-scene.add(cube);
+//scene.add(cube);
 
 // Create skeleton visualization for predicted pose
 const skeletonGroup = new THREE.Group();
@@ -318,9 +329,11 @@ function updateSkeleton(pose: number[]) {
 // Initialize skeleton
 createSkeletonVisualization();
 
+// Animate scene with Three.js
 function animate() {
-  cube.rotation.x += 0.01;
-  cube.scale.x = handDistance ? handDistance * 10 : 0;
+  // Draw hand distance bar
+  //cube.rotation.x += 0.01;
+  //cube.scale.x = handDistance ? handDistance * 10 : 0;
 
   // Update predicted skeleton
   if (predictedPose.length === 66 && mlMode === MLMode.PREDICTING) {
@@ -336,6 +349,7 @@ renderer.setAnimationLoop(animate);
 
 /* AI Training UI */
 
+// Displays and starts countdown
 function startCountdown(seconds: number): void {
   let remaining = seconds;
   countdownEl = document.getElementById("countdown") as HTMLDivElement | null;
@@ -344,6 +358,7 @@ function startCountdown(seconds: number): void {
     // Create countdown element if it doesn't exist
     countdownEl = document.createElement("div");
     countdownEl.id = "countdown";
+    // TODO: Put this CSS in real CSS
     countdownEl.style.cssText =
       "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; font-weight: bold; color: #00ff88; z-index: 1000;";
     document.body.appendChild(countdownEl);
@@ -366,6 +381,9 @@ function startCountdown(seconds: number): void {
   }, 1000);
 }
 
+/* Button event listeners */
+// TODO: Move this up top?
+
 trainBodyButton = document.getElementById(
   "trainBodyButton"
 ) as HTMLButtonElement | null;
@@ -378,6 +396,7 @@ danceButton?.addEventListener("click", dance);
 
 doneMsg = document.getElementById("doneTraining");
 
+// Train AI on body poses
 function trainBody() {
   // Phase 1: Record Person 1
   if (person1Poses.length === 0) {
@@ -418,6 +437,7 @@ function trainBody() {
     startCountdown(Math.ceil(trainingDuration / 1000));
 
     setTimeout(async () => {
+      // TODO: Can I make this a function, to not repeat myself twice?
       mlMode = MLMode.IDLE;
 
       console.log(`Person 2: Collected ${person2Poses.length} poses`);
@@ -480,6 +500,8 @@ function trainBody() {
   }
 }
 
+// User clicks "Dance with AI button" once the AI has finished training.
+// Show a dancing skeleton that reacts to user's movement.
 function dance() {
   if (!myModel) {
     alert("Please train the model first!");
@@ -493,9 +515,10 @@ function dance() {
 export async function run(
   data: PoseDatum[]
 ): Promise<{ model: any; tensorData: NormalizationData } | void> {
+  // Load and plot the original input data that we are going to train on.
   const values = data.map((d: PoseDatum, i: number) => ({
     x: i,
-    y: d.person1Pose[0], // Just show first coord for visualization
+    y: d.person1Pose[0], // Just show first coord for visualization // TODO: Why?
   }));
 
   tfvis.render.scatterplot(
@@ -508,24 +531,34 @@ export async function run(
     }
   );
 
+  // Create the model
   const model = createModel();
   tfvis.show.modelSummary({ name: "Model Summary" }, model);
 
+  // Convert the data to a form we can use for training.
   const tensorData = convertToTensor(data);
   const { inputs, labels } = tensorData;
 
+  // Train the model
   await trainModel(model, inputs, labels);
 
+  // Make some predictions using the model and compare them to the
+  // original data
   testModel(model, data, tensorData);
 
+  // Return the trained model and normalization data to callers.
   return { model, tensorData };
 }
 
+// Define model architecture
 // Updated model: 66D input → 66D output
 function createModel() {
+  // Create a small MLP with a mix of linear and ReLU layers.
+  // Input: single scalar (hand X). Output: single scalar (predicted mouse Y).
   const model = tf.sequential();
 
   // Input: 66D pose (33 landmarks × 2)
+  // First hidden layer: expand to a richer representation and apply non-linearity
   model.add(
     tf.layers.dense({
       inputShape: [66],
@@ -535,11 +568,17 @@ function createModel() {
     })
   );
 
+  // Add more model layers to increase accuracy
+
+  // Second hidden layer: narrower representation
   model.add(tf.layers.dense({ units: 64, activation: "relu", useBias: true }));
 
+  // Third hidden layer: smaller feature set
   model.add(tf.layers.dense({ units: 32, activation: "relu", useBias: true }));
 
+  // Final output layer: linear activation for regression
   // Output: 66D predicted pose
+  // TODO: Is it a problem that units go from 32 to 66?
   model.add(
     tf.layers.dense({ units: 66, activation: "linear", useBias: true })
   );
@@ -547,16 +586,27 @@ function createModel() {
   return model;
 }
 
+/**
+ * Convert the input data to tensors that we can use for machine
+ * learning. We will also do the important best practices of _shuffling_
+ * the data and _normalizing_ the data
+ * MPG on the y-axis.
+ */
 function convertToTensor(data: PoseDatum[]): NormalizationData {
+  // Wrapping these calculations in a tidy will dispose any
+  // intermediate tensors.
   return tf.tidy(() => {
+    // Step 1. Shuffle the data
     tf.util.shuffle(data);
 
+    // Step 2. Convert data to Tensor
     const inputs = data.map((d: PoseDatum) => d.person1Pose);
     const labels = data.map((d: PoseDatum) => d.person2Pose);
 
     const inputTensor = tf.tensor2d(inputs, [inputs.length, 66]);
     const labelTensor = tf.tensor2d(labels, [labels.length, 66]);
 
+    // Step 3. Normalize the data to the range 0 - 1 using min-max scaling
     const inputMax = inputTensor.max();
     const inputMin = inputTensor.min();
     const labelMax = labelTensor.max();
@@ -572,6 +622,7 @@ function convertToTensor(data: PoseDatum[]): NormalizationData {
     return {
       inputs: normalizedInputs,
       labels: normalizedLabels,
+      // Return the min/max bounds so we can use them later.
       inputMax,
       inputMin,
       labelMax,
@@ -581,9 +632,14 @@ function convertToTensor(data: PoseDatum[]): NormalizationData {
 }
 
 async function trainModel(model: any, inputs: any, labels: any) {
+  // Prepare the model for training.
   model.compile({
     optimizer: tf.train.adam(),
+    // adam optimizer as it is quite effective in practice and requires no configuration.
     loss: tf.losses.meanSquaredError,
+    // this is a function that will tell the model how well it is doing on learning
+    // each of the batches (data subsets) that it is shown. Here we use
+    // meanSquaredError to compare the predictions made by the model with the true values.
     metrics: ["mse"],
   });
 
@@ -592,7 +648,10 @@ async function trainModel(model: any, inputs: any, labels: any) {
 
   return await model.fit(inputs, labels, {
     batchSize,
+    // size of the data subsets that the model will see on each iteration of training.
+    // Common batch sizes tend to be in the range 32-512
     epochs,
+    // number of times the model is going to look at the entire dataset that you provide it
     shuffle: true,
     callbacks: tfvis.show.fitCallbacks(
       { name: "Training Performance" },
@@ -609,16 +668,23 @@ function testModel(
 ) {
   const { inputMax, inputMin, labelMin, labelMax } = normalizationData;
 
+  // Generate predictions for a uniform range of numbers between 0 and 1;
+  // We un-normalize the data by doing the inverse of the min-max scaling
+  // that we did earlier.
   const [xs, preds] = tf.tidy(() => {
+    // TODO: We don't use xs anymore
+
     // Test on first 10 training samples
     const testInputs = inputData.slice(0, 10).map((d) => d.person1Pose);
     const inputTensor = tf.tensor2d(testInputs, [testInputs.length, 66]);
 
     const normalized = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
     const predictions = model.predict(normalized);
+    // The tf.reshape() function is used to reshape a given tensor with the specified shape.
 
     const unNormPreds = predictions.mul(labelMax.sub(labelMin)).add(labelMin);
 
+    // Un-normalize the data
     return [inputTensor.dataSync(), unNormPreds.dataSync()];
   });
 
@@ -629,6 +695,7 @@ function testModel(
 }
 
 // Predict full 66D pose from input pose
+// Normalize a single pose, run predict, un-normalize and return array of output pose
 function predictPose(
   model: any,
   inputPose: number[], // 66D
@@ -637,10 +704,14 @@ function predictPose(
   const { inputMax, inputMin, labelMin, labelMax } = normalizationData;
 
   return tf.tidy(() => {
+    // create a normalized tensor for the single input
     const inputTensor = tf.tensor2d([inputPose], [1, 66]);
     const normalized = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
+    // predict (returns a Tensor)
     const pred = model.predict(normalized) as any;
+    // un-normalize prediction
     const unNorm = pred.mul(labelMax.sub(labelMin)).add(labelMin) as any;
+    // read single pose (array) value
     return Array.from(unNorm.dataSync()) as number[];
   });
 }
