@@ -65,6 +65,7 @@ let trainingDuration = 10000;
 
 let myModel: any;
 let myNormalizations: any;
+let playbackStartTime = 0;
 
 let predictedPose: number[] = []; // 66D predicted pose
 
@@ -337,11 +338,30 @@ function animate() {
   //cube.scale.x = handDistance ? handDistance * 10 : 0;
 
   // Update predicted skeleton
-  if (predictedPose.length === 66 && mlMode === MLMode.PREDICTING) {
+  if (recordingPhase === "person2" && person1Poses.length > 0) {
+    if (playbackStartTime === 0) {
+      playbackStartTime = performance.now();
+    }
+    const elapsedTime = performance.now() - playbackStartTime;
+    const progress = elapsedTime / trainingDuration;
+    const frameIndex = Math.floor(progress * person1Poses.length);
+
+    if (frameIndex < person1Poses.length) {
+      updateSkeleton(person1Poses[frameIndex]);
+      skeletonGroup.visible = true;
+    } else {
+      // Playback finished, but we wait for the recording to finish
+      skeletonGroup.visible = false;
+    }
+  } else if (predictedPose.length === 66 && mlMode === MLMode.PREDICTING) {
     updateSkeleton(predictedPose);
     skeletonGroup.visible = true;
   } else {
     skeletonGroup.visible = false;
+  }
+
+  if (recordingPhase !== "person2" && playbackStartTime !== 0) {
+    playbackStartTime = 0;
   }
 
   renderer.render(scene, camera);
@@ -441,6 +461,7 @@ function trainBody() {
     setTimeout(async () => {
       // TODO: Can I make this a function, to not repeat myself twice?
       mlMode = MLMode.IDLE;
+      recordingPhase = "idle";
 
       console.log(`Person 2: Collected ${person2Poses.length} poses`);
 
