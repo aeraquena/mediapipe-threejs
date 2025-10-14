@@ -516,17 +516,24 @@ export async function run(
   data: PoseDatum[]
 ): Promise<{ model: any; tensorData: NormalizationData } | void> {
   // Load and plot the original input data that we are going to train on.
-  const values = data.map((d: PoseDatum, i: number) => ({
-    x: i,
-    y: d.person1Pose[0], // Just show first coord for visualization // TODO: Why?
+  //console.log("pose data:");
+  //console.log(data);
+  const values = data.map((d: PoseDatum) => ({
+    x: d.person1Pose, // Previously was a single number. Now trying to pass in 66D array
+    y: d.person2Pose,
   }));
+  // TF Example
+  /* const values = data.map(d => ({
+    x: d.horsepower,
+    y: d.mpg,
+  })); */
 
   tfvis.render.scatterplot(
     { name: "Training Data Sample" },
     { values },
     {
-      xLabel: "Frame",
-      yLabel: "Sample Coord",
+      xLabel: "Person 1 Pose (x0)",
+      yLabel: "Person 2 Pose (x0)",
       height: 300,
     }
   );
