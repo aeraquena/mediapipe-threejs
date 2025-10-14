@@ -224,6 +224,7 @@ const skeletonGroup = new THREE.Group();
 scene.add(skeletonGroup);
 
 // MediaPipe pose connections (pairs of landmark indices)
+// These are circles where lines are drawn between them. TODO: Modify
 const POSE_CONNECTIONS = [
   [11, 12],
   [11, 13],
@@ -261,7 +262,7 @@ function createSkeletonVisualization() {
 
   // Create spheres for joints
   const jointGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-  const jointMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+  const jointMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // green
 
   for (let i = 0; i < 33; i++) {
     const joint = new THREE.Mesh(jointGeometry, jointMaterial);
@@ -279,7 +280,7 @@ function createSkeletonVisualization() {
     );
 
     const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0xff00ff,
+      color: 0x00ffff,
       linewidth: 2,
     });
     const line = new THREE.Line(lineGeometry, lineMaterial);
@@ -354,6 +355,7 @@ function startCountdown(seconds: number): void {
   let remaining = seconds;
   countdownEl = document.getElementById("countdown") as HTMLDivElement | null;
 
+  // TODO: replace this with prettier countdown
   if (!countdownEl) {
     // Create countdown element if it doesn't exist
     countdownEl = document.createElement("div");
