@@ -518,10 +518,12 @@ export async function run(
   // Load and plot the original input data that we are going to train on.
   //console.log("pose data:");
   //console.log(data);
-  const values = data.map((d: PoseDatum) => ({
-    x: d.person1Pose, // Previously was a single number. Now trying to pass in 66D array
-    y: d.person2Pose,
-  }));
+  const values = data.flatMap((d: PoseDatum) =>
+    d.person1Pose.map((p1, i) => ({
+      x: p1,
+      y: d.person2Pose[i],
+    }))
+  );
   // TF Example
   /* const values = data.map(d => ({
     x: d.horsepower,
@@ -532,8 +534,8 @@ export async function run(
     { name: "Training Data Sample" },
     { values },
     {
-      xLabel: "Person 1 Pose (x0)",
-      yLabel: "Person 2 Pose (x0)",
+      xLabel: "Person 1 Pose",
+      yLabel: "Person 2 Pose",
       height: 300,
     }
   );
