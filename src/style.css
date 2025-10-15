@@ -112,14 +112,6 @@ footer {
   width: 100%;
 }
 
-#pointer {
-  height: 100px;
-  width: 100px;
-  background-color: red;
-  border-radius: 50px;
-  position: absolute;
-}
-
 #countdown {
   position: fixed;
   top: 10px;
