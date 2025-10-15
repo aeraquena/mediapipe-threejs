@@ -112,10 +112,6 @@ footer {
   width: 100%;
 }
 
-#webcam {
-  margin-top: 40px;
-}
-
 #pointer {
   height: 100px;
   width: 100px;
@@ -134,15 +130,6 @@ footer {
   font-family: sans-serif;
   border-radius: 4px;
   z-index: 9999;
-}
-
-#doneTraining {
-  font-size: 30px;
-  font-family: sans-serif;
-  position: absolute;
-  left: 40px;
-  top: 530px;
-  display: none;
 }
 
 #liveView {
