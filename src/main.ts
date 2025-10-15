@@ -373,20 +373,13 @@ renderer.setAnimationLoop(animate);
 // Displays and starts countdown
 function startCountdown(seconds: number): void {
   let remaining = seconds;
+  // Use the existing countdown element from HTML
   countdownEl = document.getElementById("countdown") as HTMLDivElement | null;
 
-  // TODO: replace this with prettier countdown
-  if (!countdownEl) {
-    // Create countdown element if it doesn't exist
-    countdownEl = document.createElement("div");
-    countdownEl.id = "countdown";
-    // TODO: Put this CSS in real CSS
-    countdownEl.style.cssText =
-      "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; font-weight: bold; color: #00ff88; z-index: 1000;";
-    document.body.appendChild(countdownEl);
+  if (countdownEl) {
+    countdownEl.textContent = remaining.toString();
+    countdownEl.style.display = "block";
   }
-
-  countdownEl.textContent = remaining.toString();
 
   const intervalId = window.setInterval(() => {
     remaining -= 1;
@@ -396,8 +389,9 @@ function startCountdown(seconds: number): void {
     if (remaining <= 0) {
       clearInterval(intervalId);
       setTimeout(() => {
-        countdownEl?.remove();
-        countdownEl = null;
+        if (countdownEl) {
+          countdownEl.style.display = "none";
+        }
       }, 1000);
     }
   }, 1000);
