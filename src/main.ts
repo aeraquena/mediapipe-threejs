@@ -189,284 +189,6 @@ async function predictWebcam() {
   }
 }
 
-/************
- * Three.JS *
- ************/
-
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-const camera = threeHelper.addCamera();
-camera.position.set(0, 0, 300);
-camera.lookAt(0, 0, 0);
-
-//threeHelper.addOrbitControls(camera, renderer.domElement);
-
-const scene: THREE.Scene = new THREE.Scene();
-
-const directionalLight = threeHelper.addDirectionalLight();
-scene.add(directionalLight);
-scene.add(directionalLight.target);
-
-// Temporary cube for positioning
-const geometry = new THREE.BoxGeometry(10, 200, 5);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(geometry, material);
-//scene.add(cube);
-
-// Create skeleton visualization for predicted pose
-const skeletonGroup = new THREE.Group();
-scene.add(skeletonGroup);
-
-function createSkeletonVisualization() {
-  // Clear previous skeleton
-  while (skeletonGroup.children.length > 0) {
-    skeletonGroup.remove(skeletonGroup.children[0]);
-  }
-
-  // Create spheres for joints
-  const jointGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-  const jointMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // green
-
-  for (let i = 0; i < 33; i++) {
-    const joint = new THREE.Mesh(jointGeometry, jointMaterial);
-    joint.name = `joint_${i}`;
-    skeletonGroup.add(joint);
-  }
-
-  // Create lines for connections
-  for (const [start, end] of mediaPipeHelper.POSE_CONNECTIONS) {
-    const lineGeometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(6); // 2 points * 3 coords
-    lineGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(positions, 3)
-    );
-
-    const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0x00ffff,
-      linewidth: 2,
-    });
-    const line = new THREE.Line(lineGeometry, lineMaterial);
-    line.name = `connection_${start}_${end}`;
-    skeletonGroup.add(line);
-  }
-}
-
-function updateSkeleton(pose: number[]) {
-  if (pose.length !== 66) return;
-
-  // Update joint positions
-  for (let i = 0; i < 33; i++) {
-    const joint = skeletonGroup.getObjectByName(`joint_${i}`);
-    if (joint) {
-      // Convert normalized coords (0-1) to 3D space (-50 to 50)
-      const x = (pose[i * 2] - 0.5) * 100;
-      const y = (0.5 - pose[i * 2 + 1]) * 100; // Flip Y
-      joint.position.set(x, y, 0);
-    }
-  }
-
-  // Update connection lines
-  for (const [start, end] of mediaPipeHelper.POSE_CONNECTIONS) {
-    const line = skeletonGroup.getObjectByName(
-      `connection_${start}_${end}`
-    ) as THREE.Line;
-    if (line) {
-      const startJoint = skeletonGroup.getObjectByName(`joint_${start}`);
-      const endJoint = skeletonGroup.getObjectByName(`joint_${end}`);
-
-      if (startJoint && endJoint) {
-        const positions = line.geometry.attributes.position
-          .array as Float32Array;
-        positions[0] = startJoint.position.x;
-        positions[1] = startJoint.position.y;
-        positions[2] = startJoint.position.z;
-        positions[3] = endJoint.position.x;
-        positions[4] = endJoint.position.y;
-        positions[5] = endJoint.position.z;
-        line.geometry.attributes.position.needsUpdate = true;
-      }
-    }
-  }
-}
-
-// Initialize skeleton
-createSkeletonVisualization();
-
-// Animate scene with Three.js
-function animate() {
-  // Update predicted skeleton
-  if (recordingPhase === "person2" && person1Poses.length > 0) {
-    if (playbackStartTime === 0) {
-      playbackStartTime = performance.now();
-    }
-    const elapsedTime = performance.now() - playbackStartTime;
-    const progress = elapsedTime / trainingDuration;
-    const frameIndex = Math.floor(progress * person1Poses.length);
-
-    if (frameIndex < person1Poses.length) {
-      updateSkeleton(person1Poses[frameIndex]);
-      skeletonGroup.visible = true;
-    } else {
-      // Playback finished, but we wait for the recording to finish
-      skeletonGroup.visible = false;
-    }
-  } else if (predictedPose.length === 66 && mlMode === MLMode.PREDICTING) {
-    updateSkeleton(predictedPose);
-    skeletonGroup.visible = true;
-  } else {
-    skeletonGroup.visible = false;
-  }
-
-  if (recordingPhase !== "person2" && playbackStartTime !== 0) {
-    playbackStartTime = 0;
-  }
-
-  renderer.render(scene, camera);
-}
-renderer.setAnimationLoop(animate);
-
-/******************
- * AI Training UI *
- ******************/
-
-// Displays and starts countdown
-function startCountdown(seconds: number): void {
-  let remaining = seconds;
-  // Use the existing countdown element from HTML
-  countdownEl = document.getElementById("countdown") as HTMLDivElement | null;
-
-  if (countdownEl) {
-    countdownEl.textContent = remaining.toString();
-    countdownEl.style.display = "block";
-  }
-
-  const intervalId = window.setInterval(() => {
-    remaining -= 1;
-    if (countdownEl) {
-      countdownEl.textContent = remaining.toString();
-    }
-    if (remaining <= 0) {
-      clearInterval(intervalId);
-      setTimeout(() => {
-        if (countdownEl) {
-          countdownEl.style.display = "none";
-        }
-      }, 1000);
-    }
-  }, 1000);
-}
-
-// Train AI on body poses
-function trainBody() {
-  // Phase 1: Record Person 1
-  if (person1Poses.length === 0) {
-    recordingPhase = "person1";
-    mlMode = MLMode.TRAINING;
-    person1Poses = [];
-
-    if (trainBodyButton) {
-      trainBodyButton.innerText = "RECORDING PERSON 1...";
-      trainBodyButton.disabled = true;
-    }
-    startCountdown(Math.ceil(trainingDuration / 1000));
-
-    setTimeout(() => {
-      mlMode = MLMode.IDLE;
-
-      if (trainBodyButton) {
-        trainBodyButton.innerText = "RECORD PERSON 2";
-        trainBodyButton.disabled = false;
-      }
-
-      console.log(`Person 1: Collected ${person1Poses.length} poses`);
-      alert(
-        `Person 1 recorded! ${person1Poses.length} poses. Click button again for Person 2.`
-      );
-    }, trainingDuration);
-  }
-  // Phase 2: Record Person 2 and train model
-  else if (person1Poses.length > 0 && person2Poses.length === 0) {
-    recordingPhase = "person2";
-    mlMode = MLMode.TRAINING;
-    person2Poses = [];
-
-    if (trainBodyButton) {
-      trainBodyButton.innerText = "RECORDING PERSON 2...";
-      trainBodyButton.disabled = true;
-    }
-    startCountdown(Math.ceil(trainingDuration / 1000));
-
-    setTimeout(async () => {
-      // TODO: Can I make this a function, to not repeat myself twice?
-      mlMode = MLMode.IDLE;
-      recordingPhase = "idle";
-
-      console.log(`Person 2: Collected ${person2Poses.length} poses`);
-
-      if (person1Poses.length > 10 && person2Poses.length > 10) {
-        // Align datasets to same length
-        const minLen = Math.min(person1Poses.length, person2Poses.length);
-        const trainingData: PoseDatum[] = [];
-
-        for (let i = 0; i < minLen; i++) {
-          trainingData.push({
-            person1Pose: person1Poses[i],
-            person2Pose: person2Poses[i],
-          });
-        }
-
-        if (trainBodyButton) {
-          trainBodyButton.innerText = "TRAINING MODEL...";
-        }
-
-        let result: any = await run(trainingData);
-        myModel = result.model;
-        myNormalizations = result.tensorData;
-
-        if (trainBodyButton) {
-          trainBodyButton.innerText = "RETRAIN MODEL";
-          trainBodyButton.disabled = false;
-        }
-
-        alert(
-          `Model trained with ${trainingData.length} pose pairs! Ready to dance.`
-        );
-      } else {
-        if (trainBodyButton) {
-          trainBodyButton.innerText = "RETRAIN MODEL";
-          trainBodyButton.disabled = false;
-        }
-        alert("Not enough training data collected. Please try again.");
-      }
-    }, trainingDuration);
-  }
-  // Reset: Start over
-  else {
-    person1Poses = [];
-    person2Poses = [];
-    myModel = null;
-    myNormalizations = null;
-
-    if (trainBodyButton) {
-      trainBodyButton.innerText = "RECORD PERSON 1";
-    }
-    alert("Reset! Click button to record Person 1 again.");
-  }
-}
-
-// User clicks "Dance with AI button" once the AI has finished training.
-// Show a dancing skeleton that reacts to user's movement.
-function dance() {
-  if (!myModel) {
-    alert("Please train the model first!");
-    return;
-  }
-  mlMode = MLMode.PREDICTING;
-}
-
 /***********************
  * TensorFlow Training *
  * *********************/
@@ -661,3 +383,282 @@ function testModel(
     Array.from(preds as number[]).slice(0, 10)
   );
 }
+
+/******************
+ * AI Training UI *
+ ******************/
+
+// Displays and starts countdown
+function startCountdown(seconds: number): void {
+  let remaining = seconds;
+  // Use the existing countdown element from HTML
+  countdownEl = document.getElementById("countdown") as HTMLDivElement | null;
+
+  if (countdownEl) {
+    countdownEl.textContent = remaining.toString();
+    countdownEl.style.display = "block";
+  }
+
+  const intervalId = window.setInterval(() => {
+    remaining -= 1;
+    if (countdownEl) {
+      countdownEl.textContent = remaining.toString();
+    }
+    if (remaining <= 0) {
+      clearInterval(intervalId);
+      setTimeout(() => {
+        if (countdownEl) {
+          countdownEl.style.display = "none";
+        }
+      }, 1000);
+    }
+  }, 1000);
+}
+
+// Train AI on body poses
+function trainBody() {
+  // Phase 1: Record Person 1
+  if (person1Poses.length === 0) {
+    recordingPhase = "person1";
+    mlMode = MLMode.TRAINING;
+    person1Poses = [];
+
+    if (trainBodyButton) {
+      trainBodyButton.innerText = "RECORDING PERSON 1...";
+      trainBodyButton.disabled = true;
+    }
+    startCountdown(Math.ceil(trainingDuration / 1000));
+
+    setTimeout(() => {
+      mlMode = MLMode.IDLE;
+
+      if (trainBodyButton) {
+        trainBodyButton.innerText = "RECORD PERSON 2";
+        trainBodyButton.disabled = false;
+      }
+
+      console.log(`Person 1: Collected ${person1Poses.length} poses`);
+      alert(
+        `Person 1 recorded! ${person1Poses.length} poses. Click button again for Person 2.`
+      );
+    }, trainingDuration);
+  }
+  // Phase 2: Record Person 2 and train model
+  else if (person1Poses.length > 0 && person2Poses.length === 0) {
+    recordingPhase = "person2";
+    mlMode = MLMode.TRAINING;
+    person2Poses = [];
+
+    if (trainBodyButton) {
+      trainBodyButton.innerText = "RECORDING PERSON 2...";
+      trainBodyButton.disabled = true;
+    }
+    startCountdown(Math.ceil(trainingDuration / 1000));
+
+    setTimeout(async () => {
+      // TODO: Can I make this a function, to not repeat myself twice?
+      mlMode = MLMode.IDLE;
+      recordingPhase = "idle";
+
+      console.log(`Person 2: Collected ${person2Poses.length} poses`);
+
+      if (person1Poses.length > 10 && person2Poses.length > 10) {
+        // Align datasets to same length
+        const minLen = Math.min(person1Poses.length, person2Poses.length);
+        const trainingData: PoseDatum[] = [];
+
+        for (let i = 0; i < minLen; i++) {
+          trainingData.push({
+            person1Pose: person1Poses[i],
+            person2Pose: person2Poses[i],
+          });
+        }
+
+        if (trainBodyButton) {
+          trainBodyButton.innerText = "TRAINING MODEL...";
+        }
+
+        let result: any = await run(trainingData);
+        myModel = result.model;
+        myNormalizations = result.tensorData;
+
+        if (trainBodyButton) {
+          trainBodyButton.innerText = "RETRAIN MODEL";
+          trainBodyButton.disabled = false;
+        }
+
+        alert(
+          `Model trained with ${trainingData.length} pose pairs! Ready to dance.`
+        );
+      } else {
+        if (trainBodyButton) {
+          trainBodyButton.innerText = "RETRAIN MODEL";
+          trainBodyButton.disabled = false;
+        }
+        alert("Not enough training data collected. Please try again.");
+      }
+    }, trainingDuration);
+  }
+  // Reset: Start over
+  else {
+    person1Poses = [];
+    person2Poses = [];
+    myModel = null;
+    myNormalizations = null;
+
+    if (trainBodyButton) {
+      trainBodyButton.innerText = "RECORD PERSON 1";
+    }
+    alert("Reset! Click button to record Person 1 again.");
+  }
+}
+
+// User clicks "Dance with AI button" once the AI has finished training.
+// Show a dancing skeleton that reacts to user's movement.
+function dance() {
+  if (!myModel) {
+    alert("Please train the model first!");
+    return;
+  }
+  mlMode = MLMode.PREDICTING;
+}
+
+/************
+ * Three.JS *
+ ************/
+
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const camera = threeHelper.addCamera();
+camera.position.set(0, 0, 300);
+camera.lookAt(0, 0, 0);
+
+//threeHelper.addOrbitControls(camera, renderer.domElement);
+
+const scene: THREE.Scene = new THREE.Scene();
+
+const directionalLight = threeHelper.addDirectionalLight();
+scene.add(directionalLight);
+scene.add(directionalLight.target);
+
+// Temporary cube for positioning
+const geometry = new THREE.BoxGeometry(10, 200, 5);
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const cube = new THREE.Mesh(geometry, material);
+//scene.add(cube);
+
+// Create skeleton visualization for predicted pose
+const skeletonGroup = new THREE.Group();
+scene.add(skeletonGroup);
+
+function createSkeletonVisualization() {
+  // Clear previous skeleton
+  while (skeletonGroup.children.length > 0) {
+    skeletonGroup.remove(skeletonGroup.children[0]);
+  }
+
+  // Create spheres for joints
+  const jointGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+  const jointMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // green
+
+  for (let i = 0; i < 33; i++) {
+    const joint = new THREE.Mesh(jointGeometry, jointMaterial);
+    joint.name = `joint_${i}`;
+    skeletonGroup.add(joint);
+  }
+
+  // Create lines for connections
+  for (const [start, end] of mediaPipeHelper.POSE_CONNECTIONS) {
+    const lineGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(6); // 2 points * 3 coords
+    lineGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3)
+    );
+
+    const lineMaterial = new THREE.LineBasicMaterial({
+      color: 0x00ffff,
+      linewidth: 2,
+    });
+    const line = new THREE.Line(lineGeometry, lineMaterial);
+    line.name = `connection_${start}_${end}`;
+    skeletonGroup.add(line);
+  }
+}
+
+function updateSkeleton(pose: number[]) {
+  if (pose.length !== 66) return;
+
+  // Update joint positions
+  for (let i = 0; i < 33; i++) {
+    const joint = skeletonGroup.getObjectByName(`joint_${i}`);
+    if (joint) {
+      // Convert normalized coords (0-1) to 3D space (-50 to 50)
+      const x = (pose[i * 2] - 0.5) * 100;
+      const y = (0.5 - pose[i * 2 + 1]) * 100; // Flip Y
+      joint.position.set(x, y, 0);
+    }
+  }
+
+  // Update connection lines
+  for (const [start, end] of mediaPipeHelper.POSE_CONNECTIONS) {
+    const line = skeletonGroup.getObjectByName(
+      `connection_${start}_${end}`
+    ) as THREE.Line;
+    if (line) {
+      const startJoint = skeletonGroup.getObjectByName(`joint_${start}`);
+      const endJoint = skeletonGroup.getObjectByName(`joint_${end}`);
+
+      if (startJoint && endJoint) {
+        const positions = line.geometry.attributes.position
+          .array as Float32Array;
+        positions[0] = startJoint.position.x;
+        positions[1] = startJoint.position.y;
+        positions[2] = startJoint.position.z;
+        positions[3] = endJoint.position.x;
+        positions[4] = endJoint.position.y;
+        positions[5] = endJoint.position.z;
+        line.geometry.attributes.position.needsUpdate = true;
+      }
+    }
+  }
+}
+
+// Initialize skeleton
+createSkeletonVisualization();
+
+// Animate scene with Three.js
+function animate() {
+  // Update predicted skeleton
+  if (recordingPhase === "person2" && person1Poses.length > 0) {
+    if (playbackStartTime === 0) {
+      playbackStartTime = performance.now();
+    }
+    const elapsedTime = performance.now() - playbackStartTime;
+    const progress = elapsedTime / trainingDuration;
+    const frameIndex = Math.floor(progress * person1Poses.length);
+
+    if (frameIndex < person1Poses.length) {
+      updateSkeleton(person1Poses[frameIndex]);
+      skeletonGroup.visible = true;
+    } else {
+      // Playback finished, but we wait for the recording to finish
+      skeletonGroup.visible = false;
+    }
+  } else if (predictedPose.length === 66 && mlMode === MLMode.PREDICTING) {
+    updateSkeleton(predictedPose);
+    skeletonGroup.visible = true;
+  } else {
+    skeletonGroup.visible = false;
+  }
+
+  if (recordingPhase !== "person2" && playbackStartTime !== 0) {
+    playbackStartTime = 0;
+  }
+
+  renderer.render(scene, camera);
+}
+
+renderer.setAnimationLoop(animate);
