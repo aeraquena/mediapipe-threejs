@@ -27,7 +27,6 @@ let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 let enableWebcamButton: HTMLButtonElement | null = null;
 let trainBodyButton: HTMLButtonElement | null = null;
 let danceButton: HTMLButtonElement | null = null;
-let doneMsg: any | null = null;
 let countdownEl: HTMLDivElement | null = null;
 let recordingPhase: "idle" | "person1" | "person2" = "idle"; // TODO: Integrate with MLMode
 
@@ -410,8 +409,6 @@ danceButton = document.getElementById(
 ) as HTMLButtonElement | null;
 danceButton?.addEventListener("click", dance);
 
-doneMsg = document.getElementById("doneTraining");
-
 // Train AI on body poses
 function trainBody() {
   // Phase 1: Record Person 1
@@ -484,10 +481,6 @@ function trainBody() {
           trainBodyButton.disabled = false;
         }
 
-        if (doneMsg) {
-          doneMsg.style.display = "block";
-        }
-
         alert(
           `Model trained with ${trainingData.length} pose pairs! Ready to dance.`
         );
@@ -509,9 +502,6 @@ function trainBody() {
 
     if (trainBodyButton) {
       trainBodyButton.innerText = "RECORD PERSON 1";
-    }
-    if (doneMsg) {
-      doneMsg.style.display = "none";
     }
     alert("Reset! Click button to record Person 1 again.");
   }
