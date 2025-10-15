@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { PoseLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
-import distance2D from "./utils/distance";
 import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 
@@ -206,9 +205,6 @@ const scene: THREE.Scene = new THREE.Scene();
 const directionalLight = threeHelper.addDirectionalLight();
 scene.add(directionalLight);
 scene.add(directionalLight.target);
-
-const cube = threeHelper.addCube();
-//scene.add(cube);
 
 // Create skeleton visualization for predicted pose
 const skeletonGroup = new THREE.Group();

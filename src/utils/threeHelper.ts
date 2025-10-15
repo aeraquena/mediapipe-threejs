@@ -24,10 +24,3 @@ export const addDirectionalLight = (): THREE.DirectionalLight => {
   directionalLight.target.position.set(5, 5, 0);
   return directionalLight;
 };
-
-export const addCube = (): THREE.Mesh => {
-  const geometry = new THREE.BoxGeometry(4, 4, 4);
-  const material = new THREE.MeshToonMaterial({ color: 0x00ff00 });
-  const cube = new THREE.Mesh(geometry, material);
-  return cube;
-};
