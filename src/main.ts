@@ -195,16 +195,22 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 const camera = threeHelper.addCamera();
-camera.position.set(0, 0, 100);
+camera.position.set(0, 0, 300);
 camera.lookAt(0, 0, 0);
 
-threeHelper.addOrbitControls(camera, renderer.domElement);
+//threeHelper.addOrbitControls(camera, renderer.domElement);
 
 const scene: THREE.Scene = new THREE.Scene();
 
 const directionalLight = threeHelper.addDirectionalLight();
 scene.add(directionalLight);
 scene.add(directionalLight.target);
+
+// Temporary cube for positioning
+const geometry = new THREE.BoxGeometry(10, 200, 5);
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const cube = new THREE.Mesh(geometry, material);
+//scene.add(cube);
 
 // Create skeleton visualization for predicted pose
 const skeletonGroup = new THREE.Group();
