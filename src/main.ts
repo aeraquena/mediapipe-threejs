@@ -4,8 +4,31 @@ import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 
-declare const tf: any;
-declare const tfvis: any;
+/***************
+ * UI Elements *
+ ***************/
+
+let enableWebcamButton: HTMLButtonElement | null = null;
+let trainBodyButton: HTMLButtonElement | null = null;
+let danceButton: HTMLButtonElement | null = null;
+let countdownEl: HTMLDivElement | null = null;
+
+const video = document.getElementById("webcam") as HTMLVideoElement;
+const canvasElement = document.getElementById(
+  "output_canvas"
+) as HTMLCanvasElement;
+const canvasCtx = canvasElement.getContext("2d") as CanvasRenderingContext2D;
+const drawingUtils = new DrawingUtils(canvasCtx as CanvasRenderingContext2D);
+
+trainBodyButton = document.getElementById(
+  "trainBodyButton"
+) as HTMLButtonElement | null;
+trainBodyButton?.addEventListener("click", trainBody);
+
+danceButton = document.getElementById(
+  "danceButton"
+) as HTMLButtonElement | null;
+danceButton?.addEventListener("click", dance);
 
 // Normalization / tensor metadata returned by convertToTensor
 type NormalizationData = {
@@ -17,17 +40,14 @@ type NormalizationData = {
   labelMin: any;
 };
 
-/*************
- * MediaPipe *
- *************/
+/**************************
+ * MediaPipe declarations *
+ **************************/
 
 let poseLandmarker: PoseLandmarker | undefined = undefined;
 let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
-let enableWebcamButton: HTMLButtonElement | null = null;
-let trainBodyButton: HTMLButtonElement | null = null;
-let danceButton: HTMLButtonElement | null = null;
-let countdownEl: HTMLDivElement | null = null;
-let recordingPhase: "idle" | "person1" | "person2" = "idle"; // TODO: Integrate with MLMode
+
+let recordingPhase: "idle" | "person1" | "person2" = "idle";
 
 let webcamRunning = false;
 const videoHeight = "360px";
@@ -39,13 +59,18 @@ poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
   runningMode
 );
 
-// AI code
-// TODO: Integrate with recordingPhase? "person1", "person2"?
 const MLMode = {
   TRAINING: "Training",
   PREDICTING: "Predicting",
   IDLE: "Idle",
 };
+
+/***************************
+ * Tensorflow declarations *
+ ***************************/
+
+declare const tf: any;
+declare const tfvis: any;
 
 // Store full pose data (33 landmarks × 2 coords = 66 values)
 type PoseDatum = {
@@ -69,13 +94,6 @@ let predictedPose: number[] = []; // 66D predicted pose
 // MediaPipe: Continuously grab image from webcam stream and detect it.
 ************************************************************************/
 
-const video = document.getElementById("webcam") as HTMLVideoElement;
-const canvasElement = document.getElementById(
-  "output_canvas"
-) as HTMLCanvasElement;
-const canvasCtx = canvasElement.getContext("2d") as CanvasRenderingContext2D;
-const drawingUtils = new DrawingUtils(canvasCtx as CanvasRenderingContext2D);
-
 // Check if webcam access is supported.
 const hasGetUserMedia = (): boolean => !!navigator.mediaDevices?.getUserMedia;
 
@@ -95,7 +113,7 @@ if (hasGetUserMedia()) {
 // Enable the live webcam view and start detection.
 function enableCam(_event?: Event): void {
   if (!poseLandmarker) {
-    console.log("Wait! poseLandmaker not loaded yet.");
+    console.log("Wait! poseLandmarker not loaded yet.");
     return;
   }
 
@@ -216,37 +234,6 @@ const cube = new THREE.Mesh(geometry, material);
 const skeletonGroup = new THREE.Group();
 scene.add(skeletonGroup);
 
-// MediaPipe pose connections (pairs of landmark indices)
-// These are circles where lines are drawn between them. TODO: Modify
-const POSE_CONNECTIONS = [
-  [11, 12],
-  [11, 13],
-  [13, 15],
-  [15, 17],
-  [15, 19],
-  [15, 21],
-  [17, 19],
-  [12, 14],
-  [14, 16],
-  [16, 18],
-  [16, 20],
-  [16, 22],
-  [18, 20],
-  [11, 23],
-  [12, 24],
-  [23, 24],
-  [23, 25],
-  [25, 27],
-  [27, 29],
-  [27, 31],
-  [29, 31],
-  [24, 26],
-  [26, 28],
-  [28, 30],
-  [28, 32],
-  [30, 32],
-];
-
 function createSkeletonVisualization() {
   // Clear previous skeleton
   while (skeletonGroup.children.length > 0) {
@@ -264,7 +251,7 @@ function createSkeletonVisualization() {
   }
 
   // Create lines for connections
-  for (const [start, end] of POSE_CONNECTIONS) {
+  for (const [start, end] of mediaPipeHelper.POSE_CONNECTIONS) {
     const lineGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(6); // 2 points * 3 coords
     lineGeometry.setAttribute(
@@ -297,7 +284,7 @@ function updateSkeleton(pose: number[]) {
   }
 
   // Update connection lines
-  for (const [start, end] of POSE_CONNECTIONS) {
+  for (const [start, end] of mediaPipeHelper.POSE_CONNECTIONS) {
     const line = skeletonGroup.getObjectByName(
       `connection_${start}_${end}`
     ) as THREE.Line;
@@ -384,19 +371,6 @@ function startCountdown(seconds: number): void {
     }
   }, 1000);
 }
-
-/* Button event listeners */
-// TODO: Move this up top?
-
-trainBodyButton = document.getElementById(
-  "trainBodyButton"
-) as HTMLButtonElement | null;
-trainBodyButton?.addEventListener("click", trainBody);
-
-danceButton = document.getElementById(
-  "danceButton"
-) as HTMLButtonElement | null;
-danceButton?.addEventListener("click", dance);
 
 // Train AI on body poses
 function trainBody() {
@@ -512,8 +486,6 @@ export async function run(
   data: PoseDatum[]
 ): Promise<{ model: any; tensorData: NormalizationData } | void> {
   // Load and plot the original input data that we are going to train on.
-  //console.log("pose data:");
-  //console.log(data);
   const values = data.flatMap((d: PoseDatum) =>
     d.person1Pose.map((p1, i) => ({
       x: p1,
