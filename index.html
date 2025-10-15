@@ -13,22 +13,21 @@
     <title>mediapipe-threejs</title>
   </head>
   <body>
-    <h1>Pose detection using the MediaPipe PoseLandmarker task</h1>
-
     <section id="demos" class="invisible">
-      <h2>Demo: Webcam continuous pose landmarks detection</h2>
-      <p>
-        Stand in front of your webcam to get real-time pose landmarker
-        detection.<br />
-        Click <b>enable webcam</b> below and grant access to the webcam if
-        prompted.
-      </p>
-
       <div id="liveView" class="videoView">
         <button id="webcamButton" class="mdc-button mdc-button--raised">
           <span class="mdc-button__ripple"></span>
           <span class="mdc-button__label">ENABLE WEBCAM</span>
         </button>
+        <button id="trainBodyButton" class="mdc-button mdc-button--raised">
+          <span class="mdc-button__ripple"></span>
+          <span class="mdc-button__label">TRAIN AI</span>
+        </button>
+        <button id="danceButton" class="mdc-button mdc-button--raised">
+          <span class="mdc-button__ripple"></span>
+          <span class="mdc-button__label">DANCE WITH AI</span>
+        </button>
+
         <div style="position: relative">
           <video
             id="webcam"
@@ -47,6 +46,11 @@
       </div>
     </section>
     <div id="app"></div>
+    <div id="countdown"></div>
+    <!-- Import TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <!-- Import tfjs-vis -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
