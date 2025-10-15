@@ -34,8 +34,6 @@ let webcamRunning = false;
 const videoHeight = "360px";
 const videoWidth = "480px";
 
-let handDistance: number | null = 0;
-
 // Create and wait for pose landmarker to finish loading
 poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
   poseLandmarker,
@@ -180,13 +178,6 @@ async function predictWebcam() {
         );
       }
 
-      if (result.landmarks && result.landmarks.length) {
-        const primary = result.landmarks[0];
-        const lm19 = primary && primary[19];
-        const lm20 = primary && primary[20];
-        const primaryDist = distance2D(lm19, lm20);
-        handDistance = primaryDist;
-      }
       canvasCtx.restore();
     });
   }
@@ -332,10 +323,6 @@ createSkeletonVisualization();
 
 // Animate scene with Three.js
 function animate() {
-  // Draw hand distance bar
-  //cube.rotation.x += 0.01;
-  //cube.scale.x = handDistance ? handDistance * 10 : 0;
-
   // Update predicted skeleton
   if (recordingPhase === "person2" && person1Poses.length > 0) {
     if (playbackStartTime === 0) {
