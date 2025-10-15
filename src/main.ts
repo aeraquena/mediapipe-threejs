@@ -3,6 +3,7 @@ import { PoseLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
+import * as tfHelper from "./utils/tfHelper";
 
 /***************
  * UI Elements *
@@ -29,16 +30,6 @@ danceButton = document.getElementById(
   "danceButton"
 ) as HTMLButtonElement | null;
 danceButton?.addEventListener("click", dance);
-
-// Normalization / tensor metadata returned by convertToTensor
-type NormalizationData = {
-  inputs: any;
-  labels: any;
-  inputMax: any;
-  inputMin: any;
-  labelMax: any;
-  labelMin: any;
-};
 
 /**************************
  * MediaPipe declarations *
@@ -141,16 +132,6 @@ function enableCam(_event?: Event): void {
 
 let lastVideoTime = -1;
 
-// Helper: Flatten 33 landmarks into 66D array [x0,y0,x1,y1,...,x32,y32]
-function flattenPose(landmarks: NormalizedLandmark[]): number[] {
-  const pose: number[] = [];
-  for (let i = 0; i < 33; i++) {
-    pose.push(landmarks[i]?.x ?? 0);
-    pose.push(landmarks[i]?.y ?? 0);
-  }
-  return pose;
-}
-
 async function predictWebcam() {
   canvasElement.style.height = videoHeight;
   video.style.height = videoHeight;
@@ -168,7 +149,7 @@ async function predictWebcam() {
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
       // Training: record poses separately for each person
       if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
-        const pose = flattenPose(result.landmarks[0]);
+        const pose = tfHelper.flattenPose(result.landmarks[0]);
 
         if (recordingPhase === "person1") {
           person1Poses.push(pose);
@@ -178,8 +159,12 @@ async function predictWebcam() {
       }
       // Predicting: input pose, predict output
       else if (mlMode === MLMode.PREDICTING && result.landmarks[0]) {
-        const inputPose = flattenPose(result.landmarks[0]);
-        predictedPose = predictPose(myModel, inputPose, myNormalizations);
+        const inputPose = tfHelper.flattenPose(result.landmarks[0]);
+        predictedPose = tfHelper.predictPose(
+          myModel,
+          inputPose,
+          myNormalizations
+        );
       }
 
       canvasCtx.save();
@@ -343,7 +328,9 @@ function animate() {
 }
 renderer.setAnimationLoop(animate);
 
-/* AI Training UI */
+/******************
+ * AI Training UI *
+ ******************/
 
 // Displays and starts countdown
 function startCountdown(seconds: number): void {
@@ -480,11 +467,14 @@ function dance() {
   mlMode = MLMode.PREDICTING;
 }
 
-/* TensorFlow Training */
+/***********************
+ * TensorFlow Training *
+ * *********************/
 
+// Train model from data
 export async function run(
   data: PoseDatum[]
-): Promise<{ model: any; tensorData: NormalizationData } | void> {
+): Promise<{ model: any; tensorData: tfHelper.NormalizationData } | void> {
   // Load and plot the original input data that we are going to train on.
   const values = data.flatMap((d: PoseDatum) =>
     d.person1Pose.map((p1, i) => ({
@@ -521,6 +511,7 @@ export async function run(
 
   // Make some predictions using the model and compare them to the
   // original data
+  // TODO: I'm not really using this
   testModel(model, data, tensorData);
 
   // Return the trained model and normalization data to callers.
@@ -569,7 +560,7 @@ function createModel() {
  * the data and _normalizing_ the data
  * MPG on the y-axis.
  */
-function convertToTensor(data: PoseDatum[]): NormalizationData {
+function convertToTensor(data: PoseDatum[]): tfHelper.NormalizationData {
   // Wrapping these calculations in a tidy will dispose any
   // intermediate tensors.
   return tf.tidy(() => {
@@ -641,7 +632,7 @@ async function trainModel(model: any, inputs: any, labels: any) {
 function testModel(
   model: any,
   inputData: PoseDatum[],
-  normalizationData: NormalizationData
+  normalizationData: tfHelper.NormalizationData
 ) {
   const { inputMax, inputMin, labelMin, labelMax } = normalizationData;
 
@@ -669,26 +660,4 @@ function testModel(
     "Test predictions generated:",
     Array.from(preds as number[]).slice(0, 10)
   );
-}
-
-// Predict full 66D pose from input pose
-// Normalize a single pose, run predict, un-normalize and return array of output pose
-function predictPose(
-  model: any,
-  inputPose: number[], // 66D
-  normalizationData: NormalizationData
-): number[] {
-  const { inputMax, inputMin, labelMin, labelMax } = normalizationData;
-
-  return tf.tidy(() => {
-    // create a normalized tensor for the single input
-    const inputTensor = tf.tensor2d([inputPose], [1, 66]);
-    const normalized = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
-    // predict (returns a Tensor)
-    const pred = model.predict(normalized) as any;
-    // un-normalize prediction
-    const unNorm = pred.mul(labelMax.sub(labelMin)).add(labelMin) as any;
-    // read single pose (array) value
-    return Array.from(unNorm.dataSync()) as number[];
-  });
 }

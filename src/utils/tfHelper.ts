@@ -1,0 +1,45 @@
+import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
+
+declare const tf: any;
+
+// Normalization / tensor metadata returned by convertToTensor
+export type NormalizationData = {
+  inputs: any;
+  labels: any;
+  inputMax: any;
+  inputMin: any;
+  labelMax: any;
+  labelMin: any;
+};
+
+// Helper: Flatten 33 landmarks into 66D array [x0,y0,x1,y1,...,x32,y32]
+export function flattenPose(landmarks: NormalizedLandmark[]): number[] {
+  const pose: number[] = [];
+  for (let i = 0; i < 33; i++) {
+    pose.push(landmarks[i]?.x ?? 0);
+    pose.push(landmarks[i]?.y ?? 0);
+  }
+  return pose;
+}
+
+// Predict full 66D pose from input pose
+// Normalize a single pose, run predict, un-normalize and return array of output pose
+export function predictPose(
+  model: any,
+  inputPose: number[], // 66D
+  normalizationData: NormalizationData
+): number[] {
+  const { inputMax, inputMin, labelMin, labelMax } = normalizationData;
+
+  return tf.tidy(() => {
+    // create a normalized tensor for the single input
+    const inputTensor = tf.tensor2d([inputPose], [1, 66]);
+    const normalized = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
+    // predict (returns a Tensor)
+    const pred = model.predict(normalized) as any;
+    // un-normalize prediction
+    const unNorm = pred.mul(labelMax.sub(labelMin)).add(labelMin) as any;
+    // read single pose (array) value
+    return Array.from(unNorm.dataSync()) as number[];
+  });
+}
