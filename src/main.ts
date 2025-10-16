@@ -41,6 +41,7 @@ let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 let recordingPhase: "idle" | "person1" | "person2" = "idle";
 
 let webcamRunning = false;
+// TODO: Increase this when training
 const videoHeight = "360px";
 const videoWidth = "480px";
 

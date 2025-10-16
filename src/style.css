@@ -1,11 +1,8 @@
-@use "@material";
 body {
   font-family: roboto;
   margin: 0;
   color: #3d3d3d;
   background-color: #000000;
-  --mdc-theme-primary: #666666;
-  --mdc-theme-on-primary: #f1f3f4;
 }
 
 h1 {
@@ -56,9 +53,9 @@ footer {
   position: relative;
   float: left;
   width: 48%;
-  margin: 2% 1%;
   cursor: pointer;
   color: #fff;
+  margin: 15px;
 }
 
 .videoView p,
@@ -70,7 +67,6 @@ footer {
   border: 1px dashed rgba(255, 255, 255, 0.7);
   z-index: 2;
   font-size: 12px;
-  margin: 0;
 }
 
 .highlighter {
@@ -115,4 +111,16 @@ footer {
 
 #liveView {
   white-space: nowrap;
+}
+
+.ui-button {
+  font-size: 36px;
+  font-weight: bold;
+  padding: 10px;
+  margin-right: 10px;
+  margin-bottom: 15px;
+}
+
+.ui-button:hover {
+  background-color: yellow;
 }
