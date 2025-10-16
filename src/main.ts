@@ -535,7 +535,7 @@ const camera = threeHelper.addCamera();
 camera.position.set(0, 0, 300);
 camera.lookAt(0, 0, 0);
 
-//threeHelper.addOrbitControls(camera, renderer.domElement);
+threeHelper.addOrbitControls(camera, renderer.domElement);
 
 const scene: THREE.Scene = new THREE.Scene();
 
@@ -553,6 +553,7 @@ const cube = new THREE.Mesh(geometry, material);
 const skeletonGroup = new THREE.Group();
 scene.add(skeletonGroup);
 
+// Initialize skeleton
 function createSkeletonVisualization() {
   // Clear previous skeleton
   while (skeletonGroup.children.length > 0) {
