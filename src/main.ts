@@ -207,21 +207,8 @@ export async function run(
       y: d.person2Pose[i],
     }))
   );
-  // TF Example
-  /* const values = data.map(d => ({
-    x: d.horsepower,
-    y: d.mpg,
-  })); */
 
-  tfvis.render.scatterplot(
-    { name: "Training Data Sample" },
-    { values },
-    {
-      xLabel: "Person 1 Pose",
-      yLabel: "Person 2 Pose",
-      height: 300,
-    }
-  );
+  tfHelper.renderScatterplot(tfvis, values);
 
   // Create the model
   const model = createModel();
@@ -271,7 +258,6 @@ function createModel() {
 
   // Final output layer: linear activation for regression
   // Output: 66D predicted pose
-  // TODO: Is it a problem that units go from 32 to 66?
   model.add(
     tf.layers.dense({ units: 66, activation: "linear", useBias: true })
   );

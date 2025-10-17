@@ -22,6 +22,21 @@ export function flattenPose(landmarks: NormalizedLandmark[]): number[] {
   return pose;
 }
 
+export function renderScatterplot(
+  tfvis: any,
+  values: { x: number; y: number }[]
+) {
+  tfvis.render.scatterplot(
+    { name: "Training Data Sample" },
+    { values },
+    {
+      xLabel: "Person 1 Pose",
+      yLabel: "Person 2 Pose",
+      height: 300,
+    }
+  );
+}
+
 // Predict full 66D pose from input pose
 // Normalize a single pose, run predict, un-normalize and return array of output pose
 export function predictPose(
