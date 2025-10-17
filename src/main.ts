@@ -211,7 +211,7 @@ export async function run(
   tfHelper.renderScatterplot(tfvis, values);
 
   // Create the model
-  const model = createModel();
+  const model = tfHelper.createModel();
   tfvis.show.modelSummary({ name: "Model Summary" }, model);
 
   // Convert the data to a form we can use for training.
@@ -221,48 +221,8 @@ export async function run(
   // Train the model
   await trainModel(model, inputs, labels);
 
-  // Make some predictions using the model and compare them to the
-  // original data
-  // TODO: I'm not really using this
-  testModel(model, data, tensorData);
-
   // Return the trained model and normalization data to callers.
   return { model, tensorData };
-}
-
-// Define model architecture
-// Updated model: 66D input → 66D output
-function createModel() {
-  // Create a small MLP with a mix of linear and ReLU layers.
-  // Input: single scalar (hand X). Output: single scalar (predicted mouse Y).
-  const model = tf.sequential();
-
-  // Input: 66D pose (33 landmarks × 2)
-  // First hidden layer: expand to a richer representation and apply non-linearity
-  model.add(
-    tf.layers.dense({
-      inputShape: [66],
-      units: 128,
-      activation: "relu",
-      useBias: true,
-    })
-  );
-
-  // Add more model layers to increase accuracy
-
-  // Second hidden layer: narrower representation
-  model.add(tf.layers.dense({ units: 64, activation: "relu", useBias: true }));
-
-  // Third hidden layer: smaller feature set
-  model.add(tf.layers.dense({ units: 32, activation: "relu", useBias: true }));
-
-  // Final output layer: linear activation for regression
-  // Output: 66D predicted pose
-  model.add(
-    tf.layers.dense({ units: 66, activation: "linear", useBias: true })
-  );
-
-  return model;
 }
 
 /**
@@ -338,39 +298,6 @@ async function trainModel(model: any, inputs: any, labels: any) {
       { height: 200, callbacks: ["onEpochEnd"] }
     ),
   });
-}
-
-function testModel(
-  model: any,
-  inputData: PoseDatum[],
-  normalizationData: tfHelper.NormalizationData
-) {
-  const { inputMax, inputMin, labelMin, labelMax } = normalizationData;
-
-  // Generate predictions for a uniform range of numbers between 0 and 1;
-  // We un-normalize the data by doing the inverse of the min-max scaling
-  // that we did earlier.
-  const [xs, preds] = tf.tidy(() => {
-    // TODO: We don't use xs anymore
-
-    // Test on first 10 training samples
-    const testInputs = inputData.slice(0, 10).map((d) => d.person1Pose);
-    const inputTensor = tf.tensor2d(testInputs, [testInputs.length, 66]);
-
-    const normalized = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
-    const predictions = model.predict(normalized);
-    // The tf.reshape() function is used to reshape a given tensor with the specified shape.
-
-    const unNormPreds = predictions.mul(labelMax.sub(labelMin)).add(labelMin);
-
-    // Un-normalize the data
-    return [inputTensor.dataSync(), unNormPreds.dataSync()];
-  });
-
-  console.log(
-    "Test predictions generated:",
-    Array.from(preds as number[]).slice(0, 10)
-  );
 }
 
 /******************

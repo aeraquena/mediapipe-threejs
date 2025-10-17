@@ -22,6 +22,41 @@ export function flattenPose(landmarks: NormalizedLandmark[]): number[] {
   return pose;
 }
 
+// Define model architecture
+// Updated model: 66D input → 66D output
+export function createModel() {
+  // Create a small MLP with a mix of linear and ReLU layers.
+  // Input: single scalar (hand X). Output: single scalar (predicted mouse Y).
+  const model = tf.sequential();
+
+  // Input: 66D pose (33 landmarks × 2)
+  // First hidden layer: expand to a richer representation and apply non-linearity
+  model.add(
+    tf.layers.dense({
+      inputShape: [66],
+      units: 128,
+      activation: "relu",
+      useBias: true,
+    })
+  );
+
+  // Add more model layers to increase accuracy
+
+  // Second hidden layer: narrower representation
+  model.add(tf.layers.dense({ units: 64, activation: "relu", useBias: true }));
+
+  // Third hidden layer: smaller feature set
+  model.add(tf.layers.dense({ units: 32, activation: "relu", useBias: true }));
+
+  // Final output layer: linear activation for regression
+  // Output: 66D predicted pose
+  model.add(
+    tf.layers.dense({ units: 66, activation: "linear", useBias: true })
+  );
+
+  return model;
+}
+
 export function renderScatterplot(
   tfvis: any,
   values: { x: number; y: number }[]
