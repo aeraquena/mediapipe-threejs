@@ -65,12 +65,6 @@ const MLMode = {
 declare const tf: any;
 declare const tfvis: any;
 
-// Store full pose data (33 landmarks × 2 coords = 66 values)
-type PoseDatum = {
-  person1Pose: number[]; // 66D: flatten x,y for all 33 landmarks
-  person2Pose: number[]; // 66D: flatten x,y for all 33 landmarks
-};
-
 // Array of 66D poses per person
 let person1Poses: number[][] = [];
 let person2Poses: number[][] = [];
@@ -199,10 +193,10 @@ async function predictWebcam() {
 
 // Train model from data
 export async function run(
-  data: PoseDatum[]
+  data: tfHelper.PoseDatum[]
 ): Promise<{ model: any; tensorData: tfHelper.NormalizationData } | void> {
   // Load and plot the original input data that we are going to train on.
-  const values = data.flatMap((d: PoseDatum) =>
+  const values = data.flatMap((d: tfHelper.PoseDatum) =>
     d.person1Pose.map((p1, i) => ({
       x: p1,
       y: d.person2Pose[i],
@@ -337,7 +331,7 @@ function trainBody() {
       if (person1Poses.length > 10 && person2Poses.length > 10) {
         // Align datasets to same length
         const minLen = Math.min(person1Poses.length, person2Poses.length);
-        const trainingData: PoseDatum[] = [];
+        const trainingData: tfHelper.PoseDatum[] = [];
 
         for (let i = 0; i < minLen; i++) {
           trainingData.push({
@@ -418,12 +412,6 @@ const scene: THREE.Scene = new THREE.Scene();
 const directionalLight = threeHelper.addDirectionalLight();
 scene.add(directionalLight);
 scene.add(directionalLight.target);
-
-// Temporary cube for positioning
-const geometry = new THREE.BoxGeometry(10, 200, 5);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(geometry, material);
-//scene.add(cube);
 
 // Create skeleton visualization for predicted pose
 const skeletonGroup = new THREE.Group();

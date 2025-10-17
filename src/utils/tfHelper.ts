@@ -2,6 +2,12 @@ import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 
 declare const tf: any;
 
+// Store full pose data (33 landmarks × 2 coords = 66 values)
+export type PoseDatum = {
+  person1Pose: number[]; // 66D: flatten x,y for all 33 landmarks
+  person2Pose: number[]; // 66D: flatten x,y for all 33 landmarks
+};
+
 // Normalization / tensor metadata returned by convertToTensor
 export type NormalizationData = {
   inputs: any;
@@ -63,7 +69,7 @@ export function createModel() {
  * the data and _normalizing_ the data
  * MPG on the y-axis.
  */
-export function convertToTensor(data: PoseDatum[]): tfHelper.NormalizationData {
+export function convertToTensor(data: PoseDatum[]): NormalizationData {
   // Wrapping these calculations in a tidy will dispose any
   // intermediate tensors.
   return tf.tidy(() => {
