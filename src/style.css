@@ -19,7 +19,7 @@ em {
 
 video {
   clear: both;
-  display: block;
+  display: none;
   transform: rotateY(180deg);
   -webkit-transform: rotateY(180deg);
   -moz-transform: rotateY(180deg);
