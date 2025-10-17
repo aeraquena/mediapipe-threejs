@@ -4,6 +4,7 @@ import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 import * as tfHelper from "./utils/tfHelper";
+import * as uiHelper from "./utils/uiHelper";
 
 /***************
  * UI Elements *
@@ -12,7 +13,6 @@ import * as tfHelper from "./utils/tfHelper";
 let enableWebcamButton: HTMLButtonElement | null = null;
 let trainBodyButton: HTMLButtonElement | null = null;
 let danceButton: HTMLButtonElement | null = null;
-let countdownEl: HTMLDivElement | null = null;
 
 const video = document.getElementById("webcam") as HTMLVideoElement;
 const canvasElement = document.getElementById(
@@ -183,40 +183,9 @@ async function predictWebcam() {
   }
 }
 
-/***********************
- * TensorFlow Training *
- * *********************/
-
 /******************
  * AI Training UI *
  ******************/
-
-// Displays and starts countdown
-function startCountdown(seconds: number): void {
-  let remaining = seconds;
-  // Use the existing countdown element from HTML
-  countdownEl = document.getElementById("countdown") as HTMLDivElement | null;
-
-  if (countdownEl) {
-    countdownEl.textContent = remaining.toString();
-    countdownEl.style.display = "block";
-  }
-
-  const intervalId = window.setInterval(() => {
-    remaining -= 1;
-    if (countdownEl) {
-      countdownEl.textContent = remaining.toString();
-    }
-    if (remaining <= 0) {
-      clearInterval(intervalId);
-      setTimeout(() => {
-        if (countdownEl) {
-          countdownEl.style.display = "none";
-        }
-      }, 1000);
-    }
-  }, 1000);
-}
 
 // Train AI on body poses
 function trainBody() {
@@ -230,7 +199,7 @@ function trainBody() {
       trainBodyButton.innerText = "RECORDING PERSON 1...";
       trainBodyButton.disabled = true;
     }
-    startCountdown(Math.ceil(trainingDuration / 1000));
+    uiHelper.startCountdown(Math.ceil(trainingDuration / 1000));
 
     setTimeout(() => {
       mlMode = MLMode.IDLE;
@@ -256,7 +225,7 @@ function trainBody() {
       trainBodyButton.innerText = "RECORDING PERSON 2...";
       trainBodyButton.disabled = true;
     }
-    startCountdown(Math.ceil(trainingDuration / 1000));
+    uiHelper.startCountdown(Math.ceil(trainingDuration / 1000));
 
     setTimeout(async () => {
       // TODO: Can I make this a function, to not repeat myself twice?
