@@ -42,8 +42,8 @@ let recordingPhase: "idle" | "person1" | "person2" = "idle";
 
 let webcamRunning = false;
 // TODO: Increase this when training
-const videoHeight = "360px";
-const videoWidth = "480px";
+const videoHeight = "720px";
+const videoWidth = "960px";
 
 // Create and wait for pose landmarker to finish loading
 poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
@@ -134,6 +134,8 @@ function enableCam(_event?: Event): void {
 let lastVideoTime = -1;
 
 async function predictWebcam() {
+  // Sets the canvas element and video height and width on every frame
+  // Does the small size improve MediaPipe performance?
   canvasElement.style.height = videoHeight;
   video.style.height = videoHeight;
   canvasElement.style.width = videoWidth;
@@ -528,15 +530,19 @@ function dance() {
  * Three.JS *
  ************/
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({
+  preserveDrawingBuffer: true, // so canvas.toBlob() make sense
+  alpha: true, // so png background is transparent
+});
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.domElement.id = "threeJsCanvas";
 document.body.appendChild(renderer.domElement);
 
 const camera = threeHelper.addCamera();
 camera.position.set(0, 0, 300);
 camera.lookAt(0, 0, 0);
 
-threeHelper.addOrbitControls(camera, renderer.domElement);
+//threeHelper.addOrbitControls(camera, renderer.domElement);
 
 const scene: THREE.Scene = new THREE.Scene();
 
@@ -581,7 +587,7 @@ function createSkeletonVisualization() {
     );
 
     const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0x00ffff,
+      color: 0xff0000, // red
       linewidth: 2,
     });
     const line = new THREE.Line(lineGeometry, lineMaterial);

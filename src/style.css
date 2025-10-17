@@ -124,3 +124,8 @@ footer {
 .ui-button:hover {
   background-color: yellow;
 }
+
+#threeJsCanvas {
+  position: absolute;
+  margin-top: 100px; /* temporary fix to allow clicking buttons */
+}
