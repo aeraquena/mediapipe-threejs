@@ -61,10 +61,6 @@ const MLMode = {
  * Tensorflow declarations *
  ***************************/
 
-// TODO: Why can I declare tf twice?
-declare const tf: any;
-declare const tfvis: any;
-
 // Array of 66D poses per person
 let person1Poses: number[][] = [];
 let person2Poses: number[][] = [];
@@ -191,65 +187,6 @@ async function predictWebcam() {
  * TensorFlow Training *
  * *********************/
 
-// Train model from data
-export async function run(
-  data: tfHelper.PoseDatum[]
-): Promise<{ model: any; tensorData: tfHelper.NormalizationData } | void> {
-  // Load and plot the original input data that we are going to train on.
-  const values = data.flatMap((d: tfHelper.PoseDatum) =>
-    d.person1Pose.map((p1, i) => ({
-      x: p1,
-      y: d.person2Pose[i],
-    }))
-  );
-
-  tfHelper.renderScatterplot(tfvis, values);
-
-  // Create the model
-  const model = tfHelper.createModel();
-  tfvis.show.modelSummary({ name: "Model Summary" }, model);
-
-  // Convert the data to a form we can use for training.
-  const tensorData = tfHelper.convertToTensor(data);
-  const { inputs, labels } = tensorData;
-
-  // Train the model
-  await trainModel(model, inputs, labels);
-
-  // Return the trained model and normalization data to callers.
-  return { model, tensorData };
-}
-
-async function trainModel(model: any, inputs: any, labels: any) {
-  // Prepare the model for training.
-  model.compile({
-    optimizer: tf.train.adam(),
-    // adam optimizer as it is quite effective in practice and requires no configuration.
-    loss: tf.losses.meanSquaredError,
-    // this is a function that will tell the model how well it is doing on learning
-    // each of the batches (data subsets) that it is shown. Here we use
-    // meanSquaredError to compare the predictions made by the model with the true values.
-    metrics: ["mse"],
-  });
-
-  const batchSize = 32;
-  const epochs = 50;
-
-  return await model.fit(inputs, labels, {
-    batchSize,
-    // size of the data subsets that the model will see on each iteration of training.
-    // Common batch sizes tend to be in the range 32-512
-    epochs,
-    // number of times the model is going to look at the entire dataset that you provide it
-    shuffle: true,
-    callbacks: tfvis.show.fitCallbacks(
-      { name: "Training Performance" },
-      ["loss", "mse"],
-      { height: 200, callbacks: ["onEpochEnd"] }
-    ),
-  });
-}
-
 /******************
  * AI Training UI *
  ******************/
@@ -344,7 +281,7 @@ function trainBody() {
           trainBodyButton.innerText = "TRAINING MODEL...";
         }
 
-        let result: any = await run(trainingData);
+        let result: any = await tfHelper.run(trainingData);
         myModel = result.model;
         myNormalizations = result.tensorData;
 
@@ -405,6 +342,7 @@ const camera = threeHelper.addCamera();
 camera.position.set(0, 0, 300);
 camera.lookAt(0, 0, 0);
 
+// Add orbit controls
 //threeHelper.addOrbitControls(camera, renderer.domElement);
 
 const scene: THREE.Scene = new THREE.Scene();

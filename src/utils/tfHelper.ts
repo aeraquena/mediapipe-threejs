@@ -1,6 +1,7 @@
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 
 declare const tf: any;
+declare const tfvis: any;
 
 // Store full pose data (33 landmarks × 2 coords = 66 values)
 export type PoseDatum = {
@@ -9,7 +10,7 @@ export type PoseDatum = {
 };
 
 // Normalization / tensor metadata returned by convertToTensor
-export type NormalizationData = {
+type NormalizationData = {
   inputs: any;
   labels: any;
   inputMax: any;
@@ -30,7 +31,7 @@ export function flattenPose(landmarks: NormalizedLandmark[]): number[] {
 
 // Define model architecture
 // Updated model: 66D input → 66D output
-export function createModel() {
+function createModel() {
   // Create a small MLP with a mix of linear and ReLU layers.
   // Input: single scalar (hand X). Output: single scalar (predicted mouse Y).
   const model = tf.sequential();
@@ -69,7 +70,7 @@ export function createModel() {
  * the data and _normalizing_ the data
  * MPG on the y-axis.
  */
-export function convertToTensor(data: PoseDatum[]): NormalizationData {
+function convertToTensor(data: PoseDatum[]): NormalizationData {
   // Wrapping these calculations in a tidy will dispose any
   // intermediate tensors.
   return tf.tidy(() => {
@@ -108,10 +109,66 @@ export function convertToTensor(data: PoseDatum[]): NormalizationData {
   });
 }
 
-export function renderScatterplot(
-  tfvis: any,
-  values: { x: number; y: number }[]
-) {
+// Train model from data
+export async function run(
+  data: PoseDatum[]
+): Promise<{ model: any; tensorData: NormalizationData } | void> {
+  // Load and plot the original input data that we are going to train on.
+  const values = data.flatMap((d: PoseDatum) =>
+    d.person1Pose.map((p1, i) => ({
+      x: p1,
+      y: d.person2Pose[i],
+    }))
+  );
+
+  renderScatterplot(values);
+
+  // Create the model
+  const model = createModel();
+  tfvis.show.modelSummary({ name: "Model Summary" }, model);
+
+  // Convert the data to a form we can use for training.
+  const tensorData = convertToTensor(data);
+  const { inputs, labels } = tensorData;
+
+  // Train the model
+  await trainModel(model, inputs, labels);
+
+  // Return the trained model and normalization data to callers.
+  return { model, tensorData };
+}
+
+async function trainModel(model: any, inputs: any, labels: any) {
+  // Prepare the model for training.
+  model.compile({
+    optimizer: tf.train.adam(),
+    // adam optimizer as it is quite effective in practice and requires no configuration.
+    loss: tf.losses.meanSquaredError,
+    // this is a function that will tell the model how well it is doing on learning
+    // each of the batches (data subsets) that it is shown. Here we use
+    // meanSquaredError to compare the predictions made by the model with the true values.
+    metrics: ["mse"],
+  });
+
+  const batchSize = 32;
+  const epochs = 50;
+
+  return await model.fit(inputs, labels, {
+    batchSize,
+    // size of the data subsets that the model will see on each iteration of training.
+    // Common batch sizes tend to be in the range 32-512
+    epochs,
+    // number of times the model is going to look at the entire dataset that you provide it
+    shuffle: true,
+    callbacks: tfvis.show.fitCallbacks(
+      { name: "Training Performance" },
+      ["loss", "mse"],
+      { height: 200, callbacks: ["onEpochEnd"] }
+    ),
+  });
+}
+
+function renderScatterplot(values: { x: number; y: number }[]) {
   tfvis.render.scatterplot(
     { name: "Training Data Sample" },
     { values },
