@@ -1,7 +1,6 @@
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
-
-declare const tf: any;
-declare const tfvis: any;
+import * as tf from "@tensorflow/tfjs";
+import * as tfvis from "@tensorflow/tfjs-vis";
 
 // Store full pose data (33 landmarks × 2 coords = 66 values)
 export type PoseDatum = {
