@@ -209,9 +209,6 @@ function trainBody() {
       }
 
       console.log(`Person 1: Collected ${person1Poses.length} poses`);
-      alert(
-        `Person 1 recorded! ${person1Poses.length} poses. Click button again for Person 2.`
-      );
     }, trainingDuration);
   }
   // Phase 2: Record Person 2 and train model
@@ -257,10 +254,6 @@ function trainBody() {
           trainBodyButton.innerText = "RETRAIN MODEL";
           trainBodyButton.disabled = false;
         }
-
-        alert(
-          `Model trained with ${trainingData.length} pose pairs! Ready to dance.`
-        );
       } else {
         if (trainBodyButton) {
           trainBodyButton.innerText = "RETRAIN MODEL";
