@@ -324,42 +324,6 @@ scene.add(directionalLight.target);
 const skeletonGroup = new THREE.Group();
 scene.add(skeletonGroup);
 
-// Initialize skeleton
-function createSkeletonVisualization() {
-  // Clear previous skeleton
-  while (skeletonGroup.children.length > 0) {
-    skeletonGroup.remove(skeletonGroup.children[0]);
-  }
-
-  // Create spheres for joints
-  const jointGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-  const jointMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // green
-
-  for (let i = 0; i < 33; i++) {
-    const joint = new THREE.Mesh(jointGeometry, jointMaterial);
-    joint.name = `joint_${i}`;
-    skeletonGroup.add(joint);
-  }
-
-  // Create lines for connections
-  for (const [start, end] of mediaPipeHelper.POSE_CONNECTIONS) {
-    const lineGeometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(6); // 2 points * 3 coords
-    lineGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(positions, 3)
-    );
-
-    const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0xff0000, // red
-      linewidth: 2,
-    });
-    const line = new THREE.Line(lineGeometry, lineMaterial);
-    line.name = `connection_${start}_${end}`;
-    skeletonGroup.add(line);
-  }
-}
-
 function updateSkeleton(pose: number[]) {
   if (pose.length !== 66) return;
 
@@ -399,7 +363,43 @@ function updateSkeleton(pose: number[]) {
 }
 
 // Initialize skeleton
-createSkeletonVisualization();
+function createSkeletonVisualization(skeletonGroup: THREE.Group) {
+  // Clear previous skeleton
+  while (skeletonGroup.children.length > 0) {
+    skeletonGroup.remove(skeletonGroup.children[0]);
+  }
+
+  // Create spheres for joints
+  const jointGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+  const jointMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // green
+
+  for (let i = 0; i < 33; i++) {
+    const joint = new THREE.Mesh(jointGeometry, jointMaterial);
+    joint.name = `joint_${i}`;
+    skeletonGroup.add(joint);
+  }
+
+  // Create lines for connections
+  for (const [start, end] of mediaPipeHelper.POSE_CONNECTIONS) {
+    const lineGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(6); // 2 points * 3 coords
+    lineGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3)
+    );
+
+    const lineMaterial = new THREE.LineBasicMaterial({
+      color: 0xff0000, // red
+      linewidth: 2,
+    });
+    const line = new THREE.Line(lineGeometry, lineMaterial);
+    line.name = `connection_${start}_${end}`;
+    skeletonGroup.add(line);
+  }
+}
+
+// Initialize skeleton
+createSkeletonVisualization(skeletonGroup);
 
 // Animate scene with Three.js
 function animate() {
