@@ -5,6 +5,9 @@ import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 import * as tfHelper from "./utils/tfHelper";
 import * as uiHelper from "./utils/uiHelper";
+import { getBody } from "./utils/getBody";
+import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
+import RAPIER from "@dimforge/rapier3d-compat";
 
 /***************
  * UI Elements *
@@ -311,13 +314,101 @@ camera.position.set(0, 0, 300);
 camera.lookAt(0, 0, 0);
 
 // Add orbit controls
-//threeHelper.addOrbitControls(camera, renderer.domElement);
+threeHelper.addOrbitControls(camera, renderer.domElement);
 
 const scene: THREE.Scene = new THREE.Scene();
+
+// Rapier
+
+let mousePos = new THREE.Vector2();
+const textureLoader = new THREE.TextureLoader();
+
+// initialize RAPIER
+await RAPIER.init();
+let gravity = { x: 0, y: 0, z: 0 };
+let world = new RAPIER.World(gravity);
 
 const directionalLight = threeHelper.addDirectionalLight();
 scene.add(directionalLight);
 scene.add(directionalLight.target);
+
+const numBodies = 25;
+const bodies: {
+  color: THREE.Color;
+  mesh:
+    | THREE.Mesh<
+        THREE.IcosahedronGeometry,
+        THREE.MeshBasicMaterial,
+        THREE.Object3DEventMap
+      >
+    | undefined;
+  rigid: any;
+  update: () => THREE.Vector3;
+  name: string;
+}[] = [];
+const debugBodies = false;
+for (let i = 0; i < numBodies; i++) {
+  const body = getBody({ debug: debugBodies, RAPIER, world });
+  bodies.push(body);
+  if (debugBodies && body.mesh) {
+    scene.add(body.mesh);
+  }
+}
+
+// MOUSE RIGID BODY
+const matcap = textureLoader.load("./assets/black-n-shiney.jpg");
+let bodyDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(
+  0,
+  0,
+  0
+);
+let mouseRigid = world.createRigidBody(bodyDesc);
+let dynamicCollider = RAPIER.ColliderDesc.ball(0.5);
+world.createCollider(dynamicCollider, mouseRigid);
+
+const geometry = new THREE.IcosahedronGeometry(0.35, 3);
+const material = new THREE.MeshMatcapMaterial({
+  matcap,
+});
+const normalMaterial = new THREE.MeshNormalMaterial();
+const mouseMesh = new THREE.Mesh(geometry, normalMaterial);
+mouseMesh.userData = {
+  update() {
+    mouseRigid.setTranslation(
+      { x: mousePos.x * 4, y: mousePos.y * 4, z: 0 },
+      true // wake up the ridig body
+    );
+    let { x, y, z } = mouseRigid.translation();
+    mouseMesh.position.set(x, y, z);
+  },
+};
+scene.add(mouseMesh);
+
+// METABALLS
+const normalMat = new THREE.MeshNormalMaterial();
+const metaballs = new MarchingCubes(
+  96, // resolution of metaball,
+  normalMat,
+  true, // enableUVs
+  true, // enableColors
+  90000 // max poly count
+);
+metaballs.scale.setScalar(5);
+metaballs.isolation = 1000; // blobbiness or size
+metaballs.userData = {
+  update() {
+    metaballs.reset();
+    const strength = 0.5; // size-y
+    const subtract = 10; // lightness
+    // loop through all existing rigid bodies, get add a metaball to each
+    bodies.forEach((b) => {
+      const { x, y, z } = b.update();
+      metaballs.addBall(x, y, z, strength, subtract, b.color);
+    });
+    metaballs.update();
+  },
+};
+scene.add(metaballs);
 
 // Create skeleton visualization for predicted pose
 const skeletonGroup = new THREE.Group();
@@ -394,6 +485,12 @@ function animate() {
   if (recordingPhase !== "person2" && playbackStartTime !== 0) {
     playbackStartTime = 0;
   }
+
+  // Metaballs
+  //requestAnimationFrame(animate);
+  world.step();
+  mouseMesh.userData.update();
+  metaballs.userData.update();
 
   renderer.render(scene, camera);
 }
