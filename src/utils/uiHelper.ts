@@ -8,7 +8,6 @@ export function startCountdown(seconds: number): void {
 
   if (countdownEl) {
     countdownEl.textContent = remaining.toString();
-    countdownEl.style.display = "block";
   }
 
   const intervalId = window.setInterval(() => {
@@ -20,7 +19,7 @@ export function startCountdown(seconds: number): void {
       clearInterval(intervalId);
       setTimeout(() => {
         if (countdownEl) {
-          countdownEl.style.display = "none";
+          countdownEl.textContent = "";
         }
       }, 1000);
     }

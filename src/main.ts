@@ -21,10 +21,17 @@ const canvasElement = document.getElementById(
 const canvasCtx = canvasElement.getContext("2d") as CanvasRenderingContext2D;
 const drawingUtils = new DrawingUtils(canvasCtx as CanvasRenderingContext2D);
 
+const countdownDuration = 3;
+
 trainBodyButton = document.getElementById(
   "trainBodyButton"
 ) as HTMLButtonElement | null;
-trainBodyButton?.addEventListener("click", trainBody);
+trainBodyButton?.addEventListener("click", () => {
+  uiHelper.startCountdown(countdownDuration);
+  setTimeout(() => {
+    trainBody();
+  }, countdownDuration * 1000);
+});
 
 danceButton = document.getElementById(
   "danceButton"
@@ -64,7 +71,7 @@ const MLMode = {
 let person1Poses: number[][] = [];
 let person2Poses: number[][] = [];
 let mlMode = MLMode.IDLE;
-let trainingDuration = 10000;
+let trainingDuration = 10;
 
 let myModel: any;
 let myNormalizations: any;
@@ -198,7 +205,7 @@ function trainBody() {
       trainBodyButton.innerText = "RECORDING PERSON 1...";
       trainBodyButton.disabled = true;
     }
-    uiHelper.startCountdown(Math.ceil(trainingDuration / 1000));
+    uiHelper.startCountdown(trainingDuration);
 
     setTimeout(() => {
       mlMode = MLMode.IDLE;
@@ -209,7 +216,7 @@ function trainBody() {
       }
 
       console.log(`Person 1: Collected ${person1Poses.length} poses`);
-    }, trainingDuration);
+    }, trainingDuration * 1000);
   }
   // Phase 2: Record Person 2 and train model
   else if (person1Poses.length > 0 && person2Poses.length === 0) {
@@ -221,7 +228,7 @@ function trainBody() {
       trainBodyButton.innerText = "RECORDING PERSON 2...";
       trainBodyButton.disabled = true;
     }
-    uiHelper.startCountdown(Math.ceil(trainingDuration / 1000));
+    uiHelper.startCountdown(trainingDuration);
 
     setTimeout(async () => {
       // TODO: Can I make this a function, to not repeat myself twice?
@@ -261,7 +268,7 @@ function trainBody() {
         }
         alert("Not enough training data collected. Please try again.");
       }
-    }, trainingDuration);
+    }, trainingDuration * 1000);
   }
   // Reset: Start over
   else {
@@ -367,7 +374,7 @@ function animate() {
       playbackStartTime = performance.now();
     }
     const elapsedTime = performance.now() - playbackStartTime;
-    const progress = elapsedTime / trainingDuration;
+    const progress = elapsedTime / (trainingDuration * 1000);
     const frameIndex = Math.floor(progress * person1Poses.length);
 
     if (frameIndex < person1Poses.length) {
