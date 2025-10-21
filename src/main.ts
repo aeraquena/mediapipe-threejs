@@ -321,7 +321,6 @@ const scene: THREE.Scene = new THREE.Scene();
 // Rapier
 
 let mousePos = new THREE.Vector2();
-const textureLoader = new THREE.TextureLoader();
 
 // initialize RAPIER
 await RAPIER.init();
@@ -356,7 +355,6 @@ for (let i = 0; i < numBodies; i++) {
 }
 
 // MOUSE RIGID BODY
-const matcap = textureLoader.load("./assets/black-n-shiney.jpg");
 let bodyDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(
   0,
   0,
@@ -367,16 +365,13 @@ let dynamicCollider = RAPIER.ColliderDesc.ball(0.5);
 world.createCollider(dynamicCollider, mouseRigid);
 
 const geometry = new THREE.IcosahedronGeometry(0.35, 3);
-const material = new THREE.MeshMatcapMaterial({
-  matcap,
-});
 const normalMaterial = new THREE.MeshNormalMaterial();
 const mouseMesh = new THREE.Mesh(geometry, normalMaterial);
 mouseMesh.userData = {
   update() {
     mouseRigid.setTranslation(
       { x: mousePos.x * 4, y: mousePos.y * 4, z: 0 },
-      true // wake up the ridig body
+      true // wake up the rigid body
     );
     let { x, y, z } = mouseRigid.translation();
     mouseMesh.position.set(x, y, z);
@@ -487,7 +482,6 @@ function animate() {
   }
 
   // Metaballs
-  //requestAnimationFrame(animate);
   world.step();
   mouseMesh.userData.update();
   metaballs.userData.update();
@@ -496,3 +490,10 @@ function animate() {
 }
 
 renderer.setAnimationLoop(animate);
+
+// handle mouse move
+function handleMouseMove(evt: { clientX: number; clientY: number }) {
+  mousePos.x = (evt.clientX / window.innerWidth) * 2 - 1;
+  mousePos.y = -(evt.clientY / window.innerHeight) * 2 + 1;
+}
+window.addEventListener("mousemove", handleMouseMove, false);
