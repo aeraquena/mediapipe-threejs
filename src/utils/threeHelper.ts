@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as mediaPipeHelper from "./mediaPipeHelper";
+import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
+import { getJoint } from "./getBody";
 
 export const addCamera = (): THREE.PerspectiveCamera => {
   return new THREE.PerspectiveCamera(
@@ -60,4 +62,56 @@ export function createSkeletonVisualization(skeletonGroup: THREE.Group) {
     line.name = `connection_${start}_${end}`;
     skeletonGroup.add(line);
   }
+}
+
+// Create and return skeleton metaballs
+export function createSkeletonMetaballs(RAPIER: any, world: any) {
+  // Initialize bodies for joints
+  // TODO: Make this come from MediaPipe. I need to do skeletonBodies[i].update(x, y)
+  const numSkeletonBodies = 33;
+  const skeletonBodies: {
+    color: THREE.Color;
+    mesh:
+      | THREE.Mesh<
+          THREE.IcosahedronGeometry,
+          THREE.MeshBasicMaterial,
+          THREE.Object3DEventMap
+        >
+      | undefined;
+    rigid: any;
+    update: () => THREE.Vector3;
+    name: string;
+  }[] = [];
+  // TODO: For each pose...
+  for (let i = 0; i < numSkeletonBodies; i++) {
+    const body = getJoint({ debug: true, RAPIER, world, xPos: 0, yPos: 0 });
+    skeletonBodies.push(body);
+  }
+
+  const normalMat = new THREE.MeshNormalMaterial();
+  const skeletonMetaballs = new MarchingCubes(
+    96, // resolution of metaball,
+    normalMat,
+    true, // enableUVs
+    true, // enableColors
+    90000 // max poly count
+  );
+  skeletonMetaballs.scale.setScalar(5);
+  skeletonMetaballs.isolation = 1000; // blobbiness or size
+  skeletonMetaballs.userData = {
+    update() {
+      skeletonMetaballs.reset();
+      const strength = 0.5; // size-y
+      const subtract = 10; // lightness
+      // loop through all existing rigid bodies, get add a metaball to each
+      skeletonBodies.forEach((b) => {
+        const { x, y, z } = b.update();
+        // TODO: Get x, y, z from position of skeleton
+        // Might be easier to do it live?
+        skeletonMetaballs.addBall(x, y, z, strength, subtract, b.color);
+      });
+      skeletonMetaballs.update();
+    },
+  };
+  return skeletonMetaballs;
 }

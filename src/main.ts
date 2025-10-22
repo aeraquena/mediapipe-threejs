@@ -5,7 +5,7 @@ import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 import * as tfHelper from "./utils/tfHelper";
 import * as uiHelper from "./utils/uiHelper";
-import { getBody, getJoint } from "./utils/getBody";
+import { getBody } from "./utils/getBody";
 import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
 import RAPIER from "@dimforge/rapier3d-compat";
 
@@ -150,6 +150,8 @@ async function predictWebcam() {
   if (lastVideoTime !== video.currentTime) {
     lastVideoTime = video.currentTime;
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
+      console.log(result);
+
       // Training: record poses separately for each person
       if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
         const pose = tfHelper.flattenPose(result.landmarks[0]);
@@ -170,6 +172,7 @@ async function predictWebcam() {
         );
       }
 
+      // Drawing utils
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       for (const landmark of result.landmarks) {
@@ -182,6 +185,8 @@ async function predictWebcam() {
           PoseLandmarker.POSE_CONNECTIONS as any
         );
       }
+
+      // TODO: Draw skeleton metaballs. Call a general function, which takes in result.landmarks.
 
       canvasCtx.restore();
     });
@@ -354,29 +359,6 @@ for (let i = 0; i < numBodies; i++) {
   }
 }
 
-// Initialize bodies for joints
-// TODO: Make this come from MediaPipe
-const numSkeletonBodies = 33;
-const skeletonBodies: {
-  color: THREE.Color;
-  mesh:
-    | THREE.Mesh<
-        THREE.IcosahedronGeometry,
-        THREE.MeshBasicMaterial,
-        THREE.Object3DEventMap
-      >
-    | undefined;
-  rigid: any;
-  update: () => THREE.Vector3;
-  name: string;
-}[] = [];
-// TODO: For each pose...
-for (let i = 0; i < numSkeletonBodies; i++) {
-  const body = getJoint({ debug: true, RAPIER, world });
-  skeletonBodies.push(body);
-}
-// TODO: I don't use skeletonBodies yet
-
 // MOUSE RIGID BODY
 let bodyDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(
   0,
@@ -400,7 +382,7 @@ mouseMesh.userData = {
     mouseMesh.position.set(x, y, z);
   },
 };
-scene.add(mouseMesh);
+//scene.add(mouseMesh);
 
 // METABALLS
 const normalMat = new THREE.MeshNormalMaterial();
@@ -426,9 +408,12 @@ metaballs.userData = {
     metaballs.update();
   },
 };
-scene.add(metaballs);
+//scene.add(metaballs);
 
 // Metaballs for joints
+// For now, this will reflect the LIVE body. Can generalize later for recorded + ML bodies
+const skeletonMetaballs = threeHelper.createSkeletonMetaballs(RAPIER, world);
+scene.add(skeletonMetaballs);
 
 // Create skeleton visualization for predicted pose
 const skeletonGroup = new THREE.Group();
@@ -436,6 +421,7 @@ scene.add(skeletonGroup);
 
 // Update skeleton
 // Doesn't work if I move this into a separate file
+// TODO: This needs to pass in which skeletonGroup
 function updateSkeleton(pose: number[]) {
   if (pose.length !== 66) return;
 
@@ -510,6 +496,8 @@ function animate() {
   world.step();
   mouseMesh.userData.update();
   metaballs.userData.update();
+
+  skeletonMetaballs.userData.update();
 
   renderer.render(scene, camera);
 }

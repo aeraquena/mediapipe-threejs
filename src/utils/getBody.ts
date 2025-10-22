@@ -67,15 +67,19 @@ function getJoint({
   debug = false,
   RAPIER,
   world,
+  xPos = 0,
+  yPos = 0,
 }: {
   debug: boolean;
   RAPIER: any;
   world: any;
+  xPos: number;
+  yPos: number;
 }) {
   const size = 0.2;
   const density = 0.5;
-  let x = 0; // TODO: From pose - pass this in
-  let y = 0; // TODO: From pose - pass this in
+  let x = xPos; // TODO: From pose - pass this in
+  let y = yPos; // TODO: From pose - pass this in
   let z = 0;
 
   // Create a dynamic rigid-body.
