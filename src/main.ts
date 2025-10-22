@@ -150,7 +150,7 @@ async function predictWebcam() {
   if (lastVideoTime !== video.currentTime) {
     lastVideoTime = video.currentTime;
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
-      console.log(result);
+      //console.log(result);
 
       // Training: record poses separately for each person
       if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
@@ -184,6 +184,10 @@ async function predictWebcam() {
           landmark as NormalizedLandmark[],
           PoseLandmarker.POSE_CONNECTIONS as any
         );
+
+        // Draw a metaball at each landmark.
+        // Should I have a global object?
+        skeletonMetaballs.userData.update(result.landmarks);
       }
 
       // TODO: Draw skeleton metaballs. Call a general function, which takes in result.landmarks.
@@ -497,7 +501,7 @@ function animate() {
   mouseMesh.userData.update();
   metaballs.userData.update();
 
-  skeletonMetaballs.userData.update();
+  //skeletonMetaballs.userData.update();
 
   renderer.render(scene, camera);
 }

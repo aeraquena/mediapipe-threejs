@@ -107,7 +107,7 @@ function getJoint({
     mesh = new THREE.Mesh(geometry, material);
   }
 
-  function update() {
+  function update(/* take in new x, y */) {
     rigid.resetForces(true);
     let { x, y, z } = rigid.translation();
     let pos = new THREE.Vector3(x, y, z);

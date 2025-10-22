@@ -99,16 +99,24 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
   skeletonMetaballs.scale.setScalar(5);
   skeletonMetaballs.isolation = 1000; // blobbiness or size
   skeletonMetaballs.userData = {
-    update() {
+    update(landmarks: any) {
       skeletonMetaballs.reset();
       const strength = 0.5; // size-y
       const subtract = 10; // lightness
       // loop through all existing rigid bodies, get add a metaball to each
-      skeletonBodies.forEach((b) => {
-        const { x, y, z } = b.update();
+      skeletonBodies.forEach((b, i) => {
+        // might wanna get index
+        //const { x, y, z } = b.update(); //landmarks[i]
         // TODO: Get x, y, z from position of skeleton
         // Might be easier to do it live?
-        skeletonMetaballs.addBall(x, y, z, strength, subtract, b.color);
+        skeletonMetaballs.addBall(
+          landmarks[0][i].x, // TODO: This only does person 1 rn
+          landmarks[0][i].y,
+          0,
+          strength,
+          subtract,
+          b.color
+        );
       });
       skeletonMetaballs.update();
     },
