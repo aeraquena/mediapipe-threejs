@@ -110,8 +110,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         // TODO: Get x, y, z from position of skeleton
         // Might be easier to do it live?
         skeletonMetaballs.addBall(
-          landmarks[0][i].x, // TODO: This only does person 1 rn
-          landmarks[0][i].y,
+          1 - landmarks[0][i].x, // TODO: This only does person 1 rn
+          1 - landmarks[0][i].y,
           0,
           strength,
           subtract,

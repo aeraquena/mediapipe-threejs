@@ -150,7 +150,7 @@ async function predictWebcam() {
   if (lastVideoTime !== video.currentTime) {
     lastVideoTime = video.currentTime;
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
-      //console.log(result);
+      console.log(result.landmarks[0][20]);
 
       // Training: record poses separately for each person
       if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
