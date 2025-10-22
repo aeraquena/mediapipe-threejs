@@ -5,7 +5,7 @@ import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 import * as tfHelper from "./utils/tfHelper";
 import * as uiHelper from "./utils/uiHelper";
-import { getBody } from "./utils/getBody";
+import { getBody, getJoint } from "./utils/getBody";
 import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
 import RAPIER from "@dimforge/rapier3d-compat";
 
@@ -354,6 +354,29 @@ for (let i = 0; i < numBodies; i++) {
   }
 }
 
+// Initialize bodies for joints
+// TODO: Make this come from MediaPipe
+const numSkeletonBodies = 33;
+const skeletonBodies: {
+  color: THREE.Color;
+  mesh:
+    | THREE.Mesh<
+        THREE.IcosahedronGeometry,
+        THREE.MeshBasicMaterial,
+        THREE.Object3DEventMap
+      >
+    | undefined;
+  rigid: any;
+  update: () => THREE.Vector3;
+  name: string;
+}[] = [];
+// TODO: For each pose...
+for (let i = 0; i < numSkeletonBodies; i++) {
+  const body = getJoint({ debug: true, RAPIER, world });
+  skeletonBodies.push(body);
+}
+// TODO: I don't use skeletonBodies yet
+
 // MOUSE RIGID BODY
 let bodyDesc = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(
   0,
@@ -404,6 +427,8 @@ metaballs.userData = {
   },
 };
 scene.add(metaballs);
+
+// Metaballs for joints
 
 // Create skeleton visualization for predicted pose
 const skeletonGroup = new THREE.Group();

@@ -26,7 +26,7 @@ export const addDirectionalLight = (): THREE.DirectionalLight => {
   return directionalLight;
 };
 
-// Initialize skeleton
+// Initialize skeleton - creates joints and lines with names
 export function createSkeletonVisualization(skeletonGroup: THREE.Group) {
   // Clear previous skeleton
   while (skeletonGroup.children.length > 0) {
