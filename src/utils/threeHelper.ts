@@ -36,7 +36,7 @@ export function createSkeletonVisualization(skeletonGroup: THREE.Group) {
   }
 
   // Create spheres for joints
-  const jointGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+  const jointGeometry = new THREE.CapsuleGeometry(0.5, 8, 8);
   const jointMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // green
 
   for (let i = 0; i < 33; i++) {
@@ -96,12 +96,12 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
     true, // enableColors
     90000 // max poly count
   );
-  skeletonMetaballs.scale.setScalar(5);
-  skeletonMetaballs.isolation = 1000; // blobbiness or size
+  skeletonMetaballs.scale.setScalar(5); // entire metaball system
+  skeletonMetaballs.isolation = 800; // blobbiness or size. smaller number = bigger
   skeletonMetaballs.userData = {
     update(landmarks: any) {
       skeletonMetaballs.reset();
-      const strength = 0.5; // size-y
+      const strength = 2; // size-y
       const subtract = 10; // lightness
       // loop through all existing rigid bodies, get add a metaball to each
       skeletonBodies.forEach((b, i) => {

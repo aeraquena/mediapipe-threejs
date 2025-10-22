@@ -150,8 +150,6 @@ async function predictWebcam() {
   if (lastVideoTime !== video.currentTime) {
     lastVideoTime = video.currentTime;
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
-      console.log(result.landmarks[0][20]);
-
       // Training: record poses separately for each person
       if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
         const pose = tfHelper.flattenPose(result.landmarks[0]);
@@ -319,7 +317,7 @@ renderer.domElement.id = "threeJsCanvas";
 document.body.appendChild(renderer.domElement);
 
 const camera = threeHelper.addCamera();
-camera.position.set(0, 0, 300);
+camera.position.set(0, 0, 10);
 camera.lookAt(0, 0, 0);
 
 // Add orbit controls
