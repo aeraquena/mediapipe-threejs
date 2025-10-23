@@ -64,6 +64,22 @@ export function createSkeletonVisualization(skeletonGroup: THREE.Group) {
   }
 }
 
+function addBallWithPositionAndSize(
+  xPos: number,
+  yPos: number,
+  strength: number,
+  skeletonMetaballs: MarchingCubes
+) {
+  skeletonMetaballs.addBall(
+    xPos,
+    yPos,
+    0,
+    strength, // size
+    10, // subtract = lightness
+    new THREE.Color().setRGB(0.5, 0.5, 0.5)
+  );
+}
+
 // Create and return skeleton metaballs
 export function createSkeletonMetaballs(RAPIER: any, world: any) {
   // Initialize bodies for joints
@@ -102,44 +118,37 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
     update(landmarks: any) {
       skeletonMetaballs.reset();
       const strength = 0.6; // size-y
-      const subtract = 10; // lightness
       // loop through all existing rigid bodies, get add a metaball to each
       skeletonBodies.forEach((b, i) => {
-        skeletonMetaballs.addBall(
-          1 - landmarks[0][i].x, // TODO: This only does person 1 rn
+        addBallWithPositionAndSize(
+          1 - landmarks[0][i].x,
           1 - landmarks[0][i].y,
-          0,
           strength,
-          subtract,
-          b.color
+          skeletonMetaballs
         );
       });
 
-      // Add the skeleton's torso. Calculate X, Y average between 12, 11, (x) ...  12, 24 (y)
-      // TODO: Maybe make this a function, pass in position and size
+      // Add the skeleton's torso.
+      // Calculate X, Y average between left and right shoulder (x), left shoulder and left hip (y)
 
       // Torso top
-      skeletonMetaballs.addBall(
-        1 - (landmarks[0][12].x + landmarks[0][11].x) * 0.5,
-        1 -
-          (landmarks[0][24].y +
-            (landmarks[0][12].y - landmarks[0][24].y) * 0.25),
-        0,
-        2.5,
-        10,
-        new THREE.Color().setRGB(0.5, 0.5, 0.5)
-      );
-
-      // Torso bottom
-      skeletonMetaballs.addBall(
+      addBallWithPositionAndSize(
         1 - (landmarks[0][12].x + landmarks[0][11].x) * 0.5,
         1 -
           (landmarks[0][24].y +
             (landmarks[0][12].y - landmarks[0][24].y) * 0.75),
-        0,
         4,
-        10,
-        new THREE.Color().setRGB(0.5, 0.5, 0.5)
+        skeletonMetaballs
+      );
+
+      // Torso bottom
+      addBallWithPositionAndSize(
+        1 - (landmarks[0][12].x + landmarks[0][11].x) * 0.5,
+        1 -
+          (landmarks[0][24].y +
+            (landmarks[0][12].y - landmarks[0][24].y) * 0.25),
+        2.5,
+        skeletonMetaballs
       );
 
       skeletonMetaballs.update();
