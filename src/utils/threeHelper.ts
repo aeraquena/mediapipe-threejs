@@ -137,7 +137,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         1 -
           (landmarks[0][24].y +
             (landmarks[0][12].y - landmarks[0][24].y) * 0.75),
-        4,
+        3,
         skeletonMetaballs
       );
 
@@ -147,7 +147,39 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         1 -
           (landmarks[0][24].y +
             (landmarks[0][12].y - landmarks[0][24].y) * 0.25),
-        2.5,
+        2,
+        skeletonMetaballs
+      );
+
+      // Left leg top 24, 26
+      addBallWithPositionAndSize(
+        1 - (landmarks[0][24].x + landmarks[0][26].x) * 0.5,
+        1 - (landmarks[0][24].y + landmarks[0][26].y) * 0.5,
+        0.6,
+        skeletonMetaballs
+      );
+
+      // Left leg bottom 26, 28
+      addBallWithPositionAndSize(
+        1 - (landmarks[0][26].x + landmarks[0][28].x) * 0.5,
+        1 - (landmarks[0][26].y + landmarks[0][28].y) * 0.5,
+        0.6,
+        skeletonMetaballs
+      );
+
+      // Right leg top 23, 25
+      addBallWithPositionAndSize(
+        1 - (landmarks[0][23].x + landmarks[0][25].x) * 0.5,
+        1 - (landmarks[0][23].y + landmarks[0][25].y) * 0.5,
+        0.6,
+        skeletonMetaballs
+      );
+
+      // Right leg bottom 25, 27
+      addBallWithPositionAndSize(
+        1 - (landmarks[0][25].x + landmarks[0][27].x) * 0.5,
+        1 - (landmarks[0][25].y + landmarks[0][27].y) * 0.5,
+        0.6,
         skeletonMetaballs
       );
 
