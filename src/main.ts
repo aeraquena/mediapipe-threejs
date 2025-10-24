@@ -496,8 +496,8 @@ function animate() {
 
   // Metaballs
   world.step();
-  mouseMesh.userData.update();
-  metaballs.userData.update();
+  //mouseMesh.userData.update();
+  //metaballs.userData.update();
 
   //skeletonMetaballs.userData.update();
 

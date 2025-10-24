@@ -80,6 +80,24 @@ function addBallWithPositionAndSize(
   );
 }
 
+// Adds balls between joints to create a continuous tube-like object
+function addBallsBetweenJoints(
+  joint1: { x: number; y: number },
+  joint2: { x: number; y: number },
+  numBalls: number,
+  strength: number,
+  skeletonMetaballs: MarchingCubes
+) {
+  for (let i = 1; i <= numBalls; i++) {
+    addBallWithPositionAndSize(
+      1 - (joint2.x + (joint1.x - joint2.x) * (i / (numBalls + 1))),
+      1 - (joint2.y + (joint1.y - joint2.y) * (i / (numBalls + 1))),
+      strength,
+      skeletonMetaballs
+    );
+  }
+}
+
 // Create and return skeleton metaballs
 export function createSkeletonMetaballs(RAPIER: any, world: any) {
   // Initialize bodies for joints
@@ -151,100 +169,38 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         skeletonMetaballs
       );
 
-      // TODO: I'm not super sure my math is correct
-
       // Left leg top 1 24, 26
-      addBallWithPositionAndSize(
-        1 -
-          (landmarks[0][26].x +
-            (landmarks[0][24].x - landmarks[0][26].x) * 0.33),
-        1 -
-          (landmarks[0][26].y +
-            (landmarks[0][24].y - landmarks[0][26].y) * 0.33),
-        0.7,
-        skeletonMetaballs
-      );
-
-      // Left leg top 2 24, 26
-      addBallWithPositionAndSize(
-        1 -
-          (landmarks[0][26].x +
-            (landmarks[0][24].x - landmarks[0][26].x) * 0.66),
-        1 -
-          (landmarks[0][26].y +
-            (landmarks[0][24].y - landmarks[0][26].y) * 0.66),
+      addBallsBetweenJoints(
+        landmarks[0][24],
+        landmarks[0][26],
+        2,
         0.7,
         skeletonMetaballs
       );
 
       // Left leg bottom 1 26, 28
-      addBallWithPositionAndSize(
-        1 -
-          (landmarks[0][28].x +
-            (landmarks[0][26].x - landmarks[0][28].x) * 0.33),
-        1 -
-          (landmarks[0][28].y +
-            (landmarks[0][26].y - landmarks[0][28].y) * 0.33),
-        0.7,
-        skeletonMetaballs
-      );
-
-      // Left leg bottom 2 26, 28
-      addBallWithPositionAndSize(
-        1 -
-          (landmarks[0][28].x +
-            (landmarks[0][26].x - landmarks[0][28].x) * 0.66),
-        1 -
-          (landmarks[0][28].y +
-            (landmarks[0][26].y - landmarks[0][28].y) * 0.66),
+      addBallsBetweenJoints(
+        landmarks[0][26],
+        landmarks[0][28],
+        2,
         0.7,
         skeletonMetaballs
       );
 
       // Right leg top 1 23, 25
-      addBallWithPositionAndSize(
-        1 -
-          (landmarks[0][25].x +
-            (landmarks[0][23].x - landmarks[0][25].x) * 0.33),
-        1 -
-          (landmarks[0][25].y +
-            (landmarks[0][23].y - landmarks[0][25].y) * 0.33),
-        0.7,
-        skeletonMetaballs
-      );
-
-      // Right leg top 2 23, 25
-      addBallWithPositionAndSize(
-        1 -
-          (landmarks[0][25].x +
-            (landmarks[0][23].x - landmarks[0][25].x) * 0.66),
-        1 -
-          (landmarks[0][25].y +
-            (landmarks[0][23].y - landmarks[0][25].y) * 0.66),
+      addBallsBetweenJoints(
+        landmarks[0][23],
+        landmarks[0][25],
+        2,
         0.7,
         skeletonMetaballs
       );
 
       // Right leg bottom 1 25, 27
-      addBallWithPositionAndSize(
-        1 -
-          (landmarks[0][27].x +
-            (landmarks[0][25].x - landmarks[0][27].x) * 0.33),
-        1 -
-          (landmarks[0][27].y +
-            (landmarks[0][25].y - landmarks[0][27].y) * 0.33),
-        0.7,
-        skeletonMetaballs
-      );
-
-      // Right leg bottom 2 25, 27
-      addBallWithPositionAndSize(
-        1 -
-          (landmarks[0][27].x +
-            (landmarks[0][25].x - landmarks[0][27].x) * 0.66),
-        1 -
-          (landmarks[0][27].y +
-            (landmarks[0][25].y - landmarks[0][27].y) * 0.66),
+      addBallsBetweenJoints(
+        landmarks[0][25],
+        landmarks[0][27],
+        2,
         0.7,
         skeletonMetaballs
       );
