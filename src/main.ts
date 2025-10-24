@@ -131,6 +131,10 @@ function enableCam(_event?: Event): void {
 
 let lastVideoTime = -1;
 
+let lastHandPositionFrame: any = null;
+
+let velocityToTime: any = [];
+
 async function predictWebcam() {
   // Sets the canvas element and video height and width on every frame
   // Does the small size improve MediaPipe performance?
@@ -146,8 +150,23 @@ async function predictWebcam() {
   }
   let startTimeMs = performance.now();
   if (lastVideoTime !== video.currentTime) {
+    const lastFrameDuration = video.currentTime - lastVideoTime;
     lastVideoTime = video.currentTime;
+    //console.log(lastVideoTime);
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
+      /*
+        landmarks:
+          0: 
+            0: {x: 0, y: 0; z: 0}
+            ...
+            33
+      */
+
+      // calculate velocity of left hand
+      //console.log("current frame:");
+      //console.log(result.landmarks[0] ? result.landmarks[0][20] : null);
+      //console.log("last frame: ", lastHandPositionFrame);
+
       // Training: record poses separately for each person
       if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
         const pose = tfHelper.flattenPose(result.landmarks[0]);
@@ -156,6 +175,20 @@ async function predictWebcam() {
           person1Poses.push(pose);
         } else if (recordingPhase === "person2") {
           person2Poses.push(pose);
+        }
+
+        // difference
+        if (result.landmarks[0] && result.landmarks[0][20]) {
+          if (lastHandPositionFrame) {
+            const xVelocity =
+              (result.landmarks[0][20].x - lastHandPositionFrame.x) /
+              lastFrameDuration;
+            velocityToTime.push({
+              currentTime: video.currentTime,
+              xVelocity: xVelocity,
+            });
+          }
+          lastHandPositionFrame = result.landmarks[0][20];
         }
       }
       // Predicting: input pose, predict output
@@ -221,6 +254,19 @@ function trainBody() {
       }
 
       console.log(`Person 1: Collected ${person1Poses.length} poses`);
+
+      let avgVelocityToTime = [];
+      for (let i = 0; i < velocityToTime.length - 4; i++) {
+        // average i...i+4
+        avgVelocityToTime.push({
+          currentTime: velocityToTime[i].currentTime,
+          xVelocity:
+            velocityToTime
+              .slice(i, i + 4)
+              .reduce((sum: number, i: any) => sum + i.xVelocity, 0) / 4,
+        });
+      }
+      console.log(avgVelocityToTime);
     }, trainingDuration * 1000);
   }
   // Phase 2: Record Person 2 and train model
