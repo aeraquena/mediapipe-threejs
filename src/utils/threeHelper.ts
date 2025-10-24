@@ -74,7 +74,7 @@ function addBallWithPositionAndSize(
     xPos,
     yPos,
     0,
-    strength, // size
+    strength, // size // TODO: Add a global multiplier based on z-value
     6, // subtract = lightness
     new THREE.Color().setRGB(0.5, 0.5, 0.5)
   );
@@ -137,91 +137,93 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
       skeletonMetaballs.reset();
       const strength = 0.7; // size-y
       // loop through all existing rigid bodies, get add a metaball to each
-      skeletonBodies.forEach((b, i) => {
+      if (landmarks[0]) {
+        skeletonBodies.forEach((b, i) => {
+          addBallWithPositionAndSize(
+            1 - landmarks[0][i].x,
+            1 - landmarks[0][i].y,
+            strength,
+            skeletonMetaballs
+          );
+        });
+
+        // Add the skeleton's torso.
+        // Calculate X, Y average between left and right shoulder (x), left shoulder and left hip (y)
+
+        // Torso top
         addBallWithPositionAndSize(
-          1 - landmarks[0][i].x,
-          1 - landmarks[0][i].y,
-          strength,
+          1 - (landmarks[0][12].x + landmarks[0][11].x) * 0.5,
+          1 -
+            (landmarks[0][24].y +
+              (landmarks[0][12].y - landmarks[0][24].y) * 0.75),
+          3,
           skeletonMetaballs
         );
-      });
 
-      // Add the skeleton's torso.
-      // Calculate X, Y average between left and right shoulder (x), left shoulder and left hip (y)
+        // Torso bottom
+        addBallWithPositionAndSize(
+          1 - (landmarks[0][12].x + landmarks[0][11].x) * 0.5,
+          1 -
+            (landmarks[0][24].y +
+              (landmarks[0][12].y - landmarks[0][24].y) * 0.25),
+          2,
+          skeletonMetaballs
+        );
 
-      // Torso top
-      addBallWithPositionAndSize(
-        1 - (landmarks[0][12].x + landmarks[0][11].x) * 0.5,
-        1 -
-          (landmarks[0][24].y +
-            (landmarks[0][12].y - landmarks[0][24].y) * 0.75),
-        3,
-        skeletonMetaballs
-      );
+        // Left bicep
+        addBallsBetweenJoints(
+          landmarks[0][12],
+          landmarks[0][14],
+          1,
+          0.7,
+          skeletonMetaballs
+        );
 
-      // Torso bottom
-      addBallWithPositionAndSize(
-        1 - (landmarks[0][12].x + landmarks[0][11].x) * 0.5,
-        1 -
-          (landmarks[0][24].y +
-            (landmarks[0][12].y - landmarks[0][24].y) * 0.25),
-        2,
-        skeletonMetaballs
-      );
+        // Right bicep
+        addBallsBetweenJoints(
+          landmarks[0][11],
+          landmarks[0][13],
+          1,
+          0.7,
+          skeletonMetaballs
+        );
 
-      // Left bicep
-      addBallsBetweenJoints(
-        landmarks[0][12],
-        landmarks[0][14],
-        1,
-        0.7,
-        skeletonMetaballs
-      );
+        // Left leg top 1 24, 26
+        addBallsBetweenJoints(
+          landmarks[0][24],
+          landmarks[0][26],
+          2,
+          0.7,
+          skeletonMetaballs
+        );
 
-      // Right bicep
-      addBallsBetweenJoints(
-        landmarks[0][11],
-        landmarks[0][13],
-        1,
-        0.7,
-        skeletonMetaballs
-      );
+        // Left leg bottom 1 26, 28
+        addBallsBetweenJoints(
+          landmarks[0][26],
+          landmarks[0][28],
+          2,
+          0.7,
+          skeletonMetaballs
+        );
 
-      // Left leg top 1 24, 26
-      addBallsBetweenJoints(
-        landmarks[0][24],
-        landmarks[0][26],
-        2,
-        0.7,
-        skeletonMetaballs
-      );
+        // Right leg top 1 23, 25
+        addBallsBetweenJoints(
+          landmarks[0][23],
+          landmarks[0][25],
+          2,
+          0.7,
+          skeletonMetaballs
+        );
 
-      // Left leg bottom 1 26, 28
-      addBallsBetweenJoints(
-        landmarks[0][26],
-        landmarks[0][28],
-        2,
-        0.7,
-        skeletonMetaballs
-      );
-
-      // Right leg top 1 23, 25
-      addBallsBetweenJoints(
-        landmarks[0][23],
-        landmarks[0][25],
-        2,
-        0.7,
-        skeletonMetaballs
-      );
-
-      // Right leg bottom 1 25, 27
-      addBallsBetweenJoints(
-        landmarks[0][25],
-        landmarks[0][27],
-        2,
-        0.7,
-        skeletonMetaballs
-      );
+        // Right leg bottom 1 25, 27
+        addBallsBetweenJoints(
+          landmarks[0][25],
+          landmarks[0][27],
+          2,
+          0.7,
+          skeletonMetaballs
+        );
+      }
 
       skeletonMetaballs.update();
     },

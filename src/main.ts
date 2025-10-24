@@ -5,8 +5,6 @@ import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 import * as tfHelper from "./utils/tfHelper";
 import * as uiHelper from "./utils/uiHelper";
-import { getBody } from "./utils/getBody";
-import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
 import RAPIER from "@dimforge/rapier3d-compat";
 
 /***************
