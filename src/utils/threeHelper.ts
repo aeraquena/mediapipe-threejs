@@ -75,7 +75,7 @@ function addBallWithPositionAndSize(
     yPos,
     0,
     strength, // size
-    10, // subtract = lightness
+    6, // subtract = lightness
     new THREE.Color().setRGB(0.5, 0.5, 0.5)
   );
 }
@@ -113,11 +113,11 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
     90000 // max poly count
   );
   skeletonMetaballs.scale.setScalar(5); // entire metaball system
-  skeletonMetaballs.isolation = 800; // blobbiness or size. smaller number = bigger
+  skeletonMetaballs.isolation = 750; // blobbiness or size. smaller number = bigger
   skeletonMetaballs.userData = {
     update(landmarks: any) {
       skeletonMetaballs.reset();
-      const strength = 0.6; // size-y
+      const strength = 0.7; // size-y
       // loop through all existing rigid bodies, get add a metaball to each
       skeletonBodies.forEach((b, i) => {
         addBallWithPositionAndSize(
@@ -151,35 +151,101 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         skeletonMetaballs
       );
 
-      // Left leg top 24, 26
+      // TODO: I'm not super sure my math is correct
+
+      // Left leg top 1 24, 26
       addBallWithPositionAndSize(
-        1 - (landmarks[0][24].x + landmarks[0][26].x) * 0.5,
-        1 - (landmarks[0][24].y + landmarks[0][26].y) * 0.5,
-        0.6,
+        1 -
+          (landmarks[0][26].x +
+            (landmarks[0][24].x - landmarks[0][26].x) * 0.33),
+        1 -
+          (landmarks[0][26].y +
+            (landmarks[0][24].y - landmarks[0][26].y) * 0.33),
+        0.7,
         skeletonMetaballs
       );
 
-      // Left leg bottom 26, 28
+      // Left leg top 2 24, 26
       addBallWithPositionAndSize(
-        1 - (landmarks[0][26].x + landmarks[0][28].x) * 0.5,
-        1 - (landmarks[0][26].y + landmarks[0][28].y) * 0.5,
-        0.6,
+        1 -
+          (landmarks[0][26].x +
+            (landmarks[0][24].x - landmarks[0][26].x) * 0.66),
+        1 -
+          (landmarks[0][26].y +
+            (landmarks[0][24].y - landmarks[0][26].y) * 0.66),
+        0.7,
         skeletonMetaballs
       );
 
-      // Right leg top 23, 25
+      // Left leg bottom 1 26, 28
       addBallWithPositionAndSize(
-        1 - (landmarks[0][23].x + landmarks[0][25].x) * 0.5,
-        1 - (landmarks[0][23].y + landmarks[0][25].y) * 0.5,
-        0.6,
+        1 -
+          (landmarks[0][28].x +
+            (landmarks[0][26].x - landmarks[0][28].x) * 0.33),
+        1 -
+          (landmarks[0][28].y +
+            (landmarks[0][26].y - landmarks[0][28].y) * 0.33),
+        0.7,
         skeletonMetaballs
       );
 
-      // Right leg bottom 25, 27
+      // Left leg bottom 2 26, 28
       addBallWithPositionAndSize(
-        1 - (landmarks[0][25].x + landmarks[0][27].x) * 0.5,
-        1 - (landmarks[0][25].y + landmarks[0][27].y) * 0.5,
-        0.6,
+        1 -
+          (landmarks[0][28].x +
+            (landmarks[0][26].x - landmarks[0][28].x) * 0.66),
+        1 -
+          (landmarks[0][28].y +
+            (landmarks[0][26].y - landmarks[0][28].y) * 0.66),
+        0.7,
+        skeletonMetaballs
+      );
+
+      // Right leg top 1 23, 25
+      addBallWithPositionAndSize(
+        1 -
+          (landmarks[0][25].x +
+            (landmarks[0][23].x - landmarks[0][25].x) * 0.33),
+        1 -
+          (landmarks[0][25].y +
+            (landmarks[0][23].y - landmarks[0][25].y) * 0.33),
+        0.7,
+        skeletonMetaballs
+      );
+
+      // Right leg top 2 23, 25
+      addBallWithPositionAndSize(
+        1 -
+          (landmarks[0][25].x +
+            (landmarks[0][23].x - landmarks[0][25].x) * 0.66),
+        1 -
+          (landmarks[0][25].y +
+            (landmarks[0][23].y - landmarks[0][25].y) * 0.66),
+        0.7,
+        skeletonMetaballs
+      );
+
+      // Right leg bottom 1 25, 27
+      addBallWithPositionAndSize(
+        1 -
+          (landmarks[0][27].x +
+            (landmarks[0][25].x - landmarks[0][27].x) * 0.33),
+        1 -
+          (landmarks[0][27].y +
+            (landmarks[0][25].y - landmarks[0][27].y) * 0.33),
+        0.7,
+        skeletonMetaballs
+      );
+
+      // Right leg bottom 2 25, 27
+      addBallWithPositionAndSize(
+        1 -
+          (landmarks[0][27].x +
+            (landmarks[0][25].x - landmarks[0][27].x) * 0.66),
+        1 -
+          (landmarks[0][27].y +
+            (landmarks[0][25].y - landmarks[0][27].y) * 0.66),
+        0.7,
         skeletonMetaballs
       );
 
