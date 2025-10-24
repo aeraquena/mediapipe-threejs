@@ -182,13 +182,10 @@ async function predictWebcam() {
           landmark as NormalizedLandmark[],
           PoseLandmarker.POSE_CONNECTIONS as any
         );
-
-        // Draw a metaball at each landmark.
-        // Should I have a global object?
-        skeletonMetaballs.userData.update(result.landmarks);
       }
 
-      // TODO: Draw skeleton metaballs. Call a general function, which takes in result.landmarks.
+      // Draw a metaball at each landmark
+      skeletonMetaballs.userData.update(result.landmarks);
 
       canvasCtx.restore();
     });
