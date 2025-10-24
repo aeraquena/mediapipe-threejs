@@ -80,7 +80,7 @@ function addBallWithPositionAndSize(
   );
 }
 
-// Adds balls between joints to create a continuous tube-like object
+// Adds balls on the line between two joints to create a continuous tube-like object
 function addBallsBetweenJoints(
   joint1: { x: number; y: number },
   joint2: { x: number; y: number },
@@ -166,6 +166,24 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           (landmarks[0][24].y +
             (landmarks[0][12].y - landmarks[0][24].y) * 0.25),
         2,
+        skeletonMetaballs
+      );
+
+      // Left bicep
+      addBallsBetweenJoints(
+        landmarks[0][12],
+        landmarks[0][14],
+        1,
+        0.7,
+        skeletonMetaballs
+      );
+
+      // Right bicep
+      addBallsBetweenJoints(
+        landmarks[0][11],
+        landmarks[0][13],
+        1,
+        0.7,
         skeletonMetaballs
       );
 
