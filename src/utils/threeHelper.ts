@@ -136,10 +136,9 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
     update(landmarks: any) {
       skeletonMetaballs.reset();
       // loop through all existing rigid bodies, get add a metaball to each
-      // TODO: Do this for each landmark
-      if (landmarks[0]) {
-        // TODO: Calculate z position of landmarks[0][0] and scale strength
-        const zPos = landmarks[0][0].z;
+      for (let j = 0; j < landmarks.length; j++) {
+        // Calculate z position of landmarks[0][0] and scale strength
+        const zPos = landmarks[j][0].z;
 
         // TODO: Make this more accurate
         // scale -1...0 to 1...0
@@ -149,8 +148,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         skeletonBodies.forEach((b, i) => {
           addBallWithPositionAndSize(
-            1 - landmarks[0][i].x,
-            1 - landmarks[0][i].y,
+            1 - landmarks[j][i].x,
+            1 - landmarks[j][i].y,
             strength,
             skeletonMetaballs
           );
@@ -161,28 +160,28 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         // Torso top
         addBallWithPositionAndSize(
-          1 - (landmarks[0][12].x + landmarks[0][11].x) * 0.5,
+          1 - (landmarks[j][12].x + landmarks[j][11].x) * 0.5,
           1 -
-            (landmarks[0][24].y +
-              (landmarks[0][12].y - landmarks[0][24].y) * 0.66),
+            (landmarks[j][24].y +
+              (landmarks[j][12].y - landmarks[j][24].y) * 0.66),
           2 * strength,
           skeletonMetaballs
         );
 
         // Torso bottom
         addBallWithPositionAndSize(
-          1 - (landmarks[0][12].x + landmarks[0][11].x) * 0.5,
+          1 - (landmarks[j][12].x + landmarks[j][11].x) * 0.5,
           1 -
-            (landmarks[0][24].y +
-              (landmarks[0][12].y - landmarks[0][24].y) * 0.33),
+            (landmarks[j][24].y +
+              (landmarks[j][12].y - landmarks[j][24].y) * 0.33),
           2.25 * strength,
           skeletonMetaballs
         );
 
         // Left bicep
         addBallsBetweenJoints(
-          landmarks[0][12],
-          landmarks[0][14],
+          landmarks[j][12],
+          landmarks[j][14],
           1,
           strength,
           skeletonMetaballs
@@ -190,8 +189,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         // Right bicep
         addBallsBetweenJoints(
-          landmarks[0][11],
-          landmarks[0][13],
+          landmarks[j][11],
+          landmarks[j][13],
           1,
           strength,
           skeletonMetaballs
@@ -199,8 +198,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         // Left leg top 1 24, 26
         addBallsBetweenJoints(
-          landmarks[0][24],
-          landmarks[0][26],
+          landmarks[j][24],
+          landmarks[j][26],
           2,
           strength,
           skeletonMetaballs
@@ -208,8 +207,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         // Left leg bottom 1 26, 28
         addBallsBetweenJoints(
-          landmarks[0][26],
-          landmarks[0][28],
+          landmarks[j][26],
+          landmarks[j][28],
           2,
           strength,
           skeletonMetaballs
@@ -217,8 +216,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         // Right leg top 1 23, 25
         addBallsBetweenJoints(
-          landmarks[0][23],
-          landmarks[0][25],
+          landmarks[j][23],
+          landmarks[j][25],
           2,
           strength,
           skeletonMetaballs
@@ -226,8 +225,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         // Right leg bottom 1 25, 27
         addBallsBetweenJoints(
-          landmarks[0][25],
-          landmarks[0][27],
+          landmarks[j][25],
+          landmarks[j][27],
           2,
           strength,
           skeletonMetaballs
