@@ -3,6 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as mediaPipeHelper from "./mediaPipeHelper";
 import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
 import { getJoint } from "./getBody";
+import { scaleValue } from "./math";
 
 export const addCamera = (): THREE.PerspectiveCamera => {
   return new THREE.PerspectiveCamera(
@@ -116,7 +117,6 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
     update: () => THREE.Vector3;
     name: string;
   }[] = [];
-  // TODO: For each pose...
   for (let i = 0; i < numSkeletonBodies; i++) {
     const body = getJoint({ debug: true, RAPIER, world, xPos: 0, yPos: 0 });
     skeletonBodies.push(body);
@@ -135,9 +135,18 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
   skeletonMetaballs.userData = {
     update(landmarks: any) {
       skeletonMetaballs.reset();
-      const strength = 0.7; // size-y
       // loop through all existing rigid bodies, get add a metaball to each
+      // TODO: Do this for each landmark
       if (landmarks[0]) {
+        // TODO: Calculate z position of landmarks[0][0] and scale strength
+        const zPos = landmarks[0][0].z;
+
+        // TODO: Make this more accurate
+        // scale -1...0 to 1...0
+        const zPosScaled = scaleValue(zPos, -1, 0, 1, 0);
+
+        const strength = 1.75 * zPosScaled; // size
+
         skeletonBodies.forEach((b, i) => {
           addBallWithPositionAndSize(
             1 - landmarks[0][i].x,
@@ -147,7 +156,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           );
         });
 
-        // Add the skeleton's torso.
+        // Add the skeleton's torso
         // Calculate X, Y average between left and right shoulder (x), left shoulder and left hip (y)
 
         // Torso top
@@ -155,8 +164,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           1 - (landmarks[0][12].x + landmarks[0][11].x) * 0.5,
           1 -
             (landmarks[0][24].y +
-              (landmarks[0][12].y - landmarks[0][24].y) * 0.75),
-          3,
+              (landmarks[0][12].y - landmarks[0][24].y) * 0.66),
+          2 * strength,
           skeletonMetaballs
         );
 
@@ -165,8 +174,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           1 - (landmarks[0][12].x + landmarks[0][11].x) * 0.5,
           1 -
             (landmarks[0][24].y +
-              (landmarks[0][12].y - landmarks[0][24].y) * 0.25),
-          2,
+              (landmarks[0][12].y - landmarks[0][24].y) * 0.33),
+          2.25 * strength,
           skeletonMetaballs
         );
 
@@ -175,7 +184,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           landmarks[0][12],
           landmarks[0][14],
           1,
-          0.7,
+          strength,
           skeletonMetaballs
         );
 
@@ -184,7 +193,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           landmarks[0][11],
           landmarks[0][13],
           1,
-          0.7,
+          strength,
           skeletonMetaballs
         );
 
@@ -193,7 +202,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           landmarks[0][24],
           landmarks[0][26],
           2,
-          0.7,
+          strength,
           skeletonMetaballs
         );
 
@@ -202,7 +211,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           landmarks[0][26],
           landmarks[0][28],
           2,
-          0.7,
+          strength,
           skeletonMetaballs
         );
 
@@ -211,7 +220,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           landmarks[0][23],
           landmarks[0][25],
           2,
-          0.7,
+          strength,
           skeletonMetaballs
         );
 
@@ -220,7 +229,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           landmarks[0][25],
           landmarks[0][27],
           2,
-          0.7,
+          strength,
           skeletonMetaballs
         );
       }
