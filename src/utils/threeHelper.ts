@@ -72,10 +72,10 @@ function addBallWithPositionAndSize(
   skeletonMetaballs: MarchingCubes
 ) {
   skeletonMetaballs.addBall(
-    xPos,
-    yPos,
+    1 - xPos, // Subtracts pos from 1 to flip orientation
+    1 - yPos, // Subtracts pos from 1 to flip orientation
     0,
-    strength, // size // TODO: Add a global multiplier based on z-value
+    strength,
     6, // subtract = lightness
     new THREE.Color().setRGB(0.5, 0.5, 0.5)
   );
@@ -91,8 +91,8 @@ function addBallsBetweenJoints(
 ) {
   for (let i = 1; i <= numBalls; i++) {
     addBallWithPositionAndSize(
-      1 - (joint2.x + (joint1.x - joint2.x) * (i / (numBalls + 1))),
-      1 - (joint2.y + (joint1.y - joint2.y) * (i / (numBalls + 1))),
+      joint2.x + (joint1.x - joint2.x) * (i / (numBalls + 1)),
+      joint2.y + (joint1.y - joint2.y) * (i / (numBalls + 1)),
       strength,
       skeletonMetaballs
     );
@@ -150,8 +150,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           // Skip all head landmarks and foot index
           if (i > 10 && i < 31) {
             addBallWithPositionAndSize(
-              1 - landmarks[j][i].x,
-              1 - landmarks[j][i].y,
+              landmarks[j][i].x,
+              landmarks[j][i].y,
               strength,
               skeletonMetaballs
             );
@@ -160,8 +160,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         // Add skeleton head
         addBallWithPositionAndSize(
-          1 - landmarks[j][JOINTS.NOSE].x,
-          1 - landmarks[j][JOINTS.NOSE].y,
+          landmarks[j][JOINTS.NOSE].x,
+          landmarks[j][JOINTS.NOSE].y,
           7 * strength,
           skeletonMetaballs
         );
@@ -171,45 +171,39 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         // Torso top
         addBallWithPositionAndSize(
-          1 -
-            (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
-              landmarks[j][JOINTS.LEFT_SHOULDER].x) *
-              0.5,
-          1 -
-            (landmarks[j][JOINTS.RIGHT_HIP].y +
-              (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
-                landmarks[j][JOINTS.RIGHT_HIP].y) *
-                0.75),
+          (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
+            landmarks[j][JOINTS.LEFT_SHOULDER].x) *
+            0.5,
+          landmarks[j][JOINTS.RIGHT_HIP].y +
+            (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
+              landmarks[j][JOINTS.RIGHT_HIP].y) *
+              0.75,
           4.75 * strength,
           skeletonMetaballs
         );
 
         // Torso center
         addBallWithPositionAndSize(
-          1 -
-            (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
-              landmarks[j][JOINTS.LEFT_SHOULDER].x) *
+          (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
+            landmarks[j][JOINTS.LEFT_SHOULDER].x) *
+            0.5,
+          landmarks[j][JOINTS.RIGHT_HIP].y +
+            (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
+              landmarks[j][JOINTS.RIGHT_HIP].y) *
               0.5,
-          1 -
-            (landmarks[j][JOINTS.RIGHT_HIP].y +
-              (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
-                landmarks[j][JOINTS.RIGHT_HIP].y) *
-                0.5),
           5.25 * strength,
           skeletonMetaballs
         );
 
         // Torso bottom
         addBallWithPositionAndSize(
-          1 -
-            (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
-              landmarks[j][JOINTS.LEFT_SHOULDER].x) *
-              0.5,
-          1 -
-            (landmarks[j][JOINTS.RIGHT_HIP].y +
-              (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
-                landmarks[j][JOINTS.RIGHT_HIP].y) *
-                0.33),
+          (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
+            landmarks[j][JOINTS.LEFT_SHOULDER].x) *
+            0.5,
+          landmarks[j][JOINTS.RIGHT_HIP].y +
+            (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
+              landmarks[j][JOINTS.RIGHT_HIP].y) *
+              0.33,
           5.25 * strength,
           skeletonMetaballs
         );
