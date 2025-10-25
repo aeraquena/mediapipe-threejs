@@ -77,7 +77,7 @@ function addBallWithPositionAndSize(
     0,
     strength,
     6, // subtract = lightness
-    new THREE.Color().setRGB(0.5, 0.5, 0.5)
+    new THREE.Color().setRGB(Math.random(), Math.random(), Math.random()) // TODO: This color doesn't work
   );
 }
 
@@ -102,7 +102,6 @@ function addBallsBetweenJoints(
 // Create and return skeleton metaballs
 export function createSkeletonMetaballs(RAPIER: any, world: any) {
   // Initialize bodies for joints
-  // TODO: Make this come from MediaPipe. I need to do skeletonBodies[i].update(x, y)
   const numSkeletonBodies = 33;
   const skeletonBodies: {
     color: THREE.Color;
@@ -122,10 +121,12 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
     skeletonBodies.push(body);
   }
 
-  const normalMat = new THREE.MeshNormalMaterial();
+  const matcapMat = new THREE.MeshMatcapMaterial();
+  // TODO: Change for different people. Can be randomly picked from set
+  matcapMat.color = new THREE.Color().setHex(0x4deeea);
   const skeletonMetaballs = new MarchingCubes(
     96, // resolution of metaball,
-    normalMat,
+    matcapMat,
     true, // enableUVs
     true, // enableColors
     90000 // max poly count
