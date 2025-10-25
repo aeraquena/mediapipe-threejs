@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import * as mediaPipeHelper from "./mediaPipeHelper";
+import { JOINTS, POSE_CONNECTIONS } from "./mediaPipeHelper";
 import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
 import { getJoint } from "./getBody";
 import { scaleValue } from "./math";
@@ -47,7 +47,7 @@ export function createSkeletonVisualization(skeletonGroup: THREE.Group) {
   }
 
   // Create lines for connections
-  for (const [start, end] of mediaPipeHelper.POSE_CONNECTIONS) {
+  for (const [start, end] of POSE_CONNECTIONS) {
     const lineGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(6); // 2 points * 3 coords
     lineGeometry.setAttribute(
@@ -138,7 +138,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
       // loop through all existing rigid bodies, get add a metaball to each
       for (let j = 0; j < landmarks.length; j++) {
         // Calculate z position of landmarks[0][0] and scale strength
-        const zPos = landmarks[j][0].z;
+        const zPos = landmarks[j][JOINTS.NOSE].z;
 
         // TODO: Make this more accurate
         // scale -1...0 to 1...0
@@ -160,8 +160,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         // Add skeleton head
         addBallWithPositionAndSize(
-          1 - landmarks[j][0].x,
-          1 - landmarks[j][0].y,
+          1 - landmarks[j][JOINTS.NOSE].x,
+          1 - landmarks[j][JOINTS.NOSE].y,
           7 * strength,
           skeletonMetaballs
         );
@@ -171,56 +171,62 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         // Torso top
         addBallWithPositionAndSize(
-          1 - (landmarks[j][12].x + landmarks[j][11].x) * 0.5,
           1 -
-            (landmarks[j][24].y +
-              (landmarks[j][12].y - landmarks[j][24].y) * 0.75),
+            (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
+              landmarks[j][JOINTS.LEFT_SHOULDER].x) *
+              0.5,
+          1 -
+            (landmarks[j][JOINTS.RIGHT_HIP].y +
+              (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
+                landmarks[j][JOINTS.RIGHT_HIP].y) *
+                0.75),
           4.75 * strength,
           skeletonMetaballs
         );
 
         // Torso center
         addBallWithPositionAndSize(
-          1 - (landmarks[j][12].x + landmarks[j][11].x) * 0.5,
           1 -
-            (landmarks[j][24].y +
-              (landmarks[j][12].y - landmarks[j][24].y) * 0.5),
+            (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
+              landmarks[j][JOINTS.LEFT_SHOULDER].x) *
+              0.5,
+          1 -
+            (landmarks[j][JOINTS.RIGHT_HIP].y +
+              (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
+                landmarks[j][JOINTS.RIGHT_HIP].y) *
+                0.5),
           5.25 * strength,
           skeletonMetaballs
         );
 
         // Torso bottom
         addBallWithPositionAndSize(
-          1 - (landmarks[j][12].x + landmarks[j][11].x) * 0.5,
           1 -
-            (landmarks[j][24].y +
-              (landmarks[j][12].y - landmarks[j][24].y) * 0.33),
+            (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
+              landmarks[j][JOINTS.LEFT_SHOULDER].x) *
+              0.5,
+          1 -
+            (landmarks[j][JOINTS.RIGHT_HIP].y +
+              (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
+                landmarks[j][JOINTS.RIGHT_HIP].y) *
+                0.33),
           5.25 * strength,
-          skeletonMetaballs
-        );
-
-        // Left bicep
-        addBallsBetweenJoints(
-          landmarks[j][12],
-          landmarks[j][14],
-          2,
-          strength,
           skeletonMetaballs
         );
 
         // Right bicep
         addBallsBetweenJoints(
-          landmarks[j][11],
-          landmarks[j][13],
+          landmarks[j][JOINTS.RIGHT_SHOULDER],
+          landmarks[j][JOINTS.RIGHT_ELBOW],
           2,
           strength,
           skeletonMetaballs
         );
 
-        // Left forearm
+        // Left bicep
         addBallsBetweenJoints(
-          landmarks[j][14],
-          landmarks[j][16],
+          landmarks[j][JOINTS.LEFT_SHOULDER],
+          landmarks[j][JOINTS.LEFT_ELBOW],
           2,
           strength,
           skeletonMetaballs
@@ -228,44 +234,53 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
         // Right forearm
         addBallsBetweenJoints(
-          landmarks[j][13],
-          landmarks[j][15],
+          landmarks[j][JOINTS.RIGHT_ELBOW],
+          landmarks[j][JOINTS.RIGHT_WRIST],
           2,
           strength,
           skeletonMetaballs
         );
 
-        // Left leg top 1 24, 26
+        // Left forearm
         addBallsBetweenJoints(
-          landmarks[j][24],
-          landmarks[j][26],
+          landmarks[j][JOINTS.LEFT_ELBOW],
+          landmarks[j][JOINTS.LEFT_WRIST],
+          2,
+          strength,
+          skeletonMetaballs
+        );
+
+        // Right leg top 1 24, 26
+        addBallsBetweenJoints(
+          landmarks[j][JOINTS.RIGHT_HIP],
+          landmarks[j][JOINTS.RIGHT_KNEE],
           4,
           strength,
           skeletonMetaballs
         );
 
-        // Left leg bottom 1 26, 28
+        // Right leg bottom 1 26, 28
         addBallsBetweenJoints(
-          landmarks[j][26],
-          landmarks[j][28],
+          landmarks[j][JOINTS.RIGHT_KNEE],
+          landmarks[j][JOINTS.RIGHT_ANKLE],
           4,
           strength,
           skeletonMetaballs
         );
 
-        // Right leg top 1 23, 25
+        // Left leg top 1 23, 25
         addBallsBetweenJoints(
-          landmarks[j][23],
-          landmarks[j][25],
+          landmarks[j][JOINTS.LEFT_HIP],
+          landmarks[j][JOINTS.LEFT_KNEE],
           4,
           strength,
           skeletonMetaballs
         );
 
-        // Right leg bottom 1 25, 27
+        // Left leg bottom 1 25, 27
         addBallsBetweenJoints(
-          landmarks[j][25],
-          landmarks[j][27],
+          landmarks[j][JOINTS.LEFT_KNEE],
+          landmarks[j][JOINTS.LEFT_ANKLE],
           4,
           strength,
           skeletonMetaballs
