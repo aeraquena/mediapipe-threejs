@@ -5,6 +5,7 @@ import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 import * as tfHelper from "./utils/tfHelper";
 import * as uiHelper from "./utils/uiHelper";
+import RAPIER from "@dimforge/rapier3d-compat";
 
 /***************
  * UI Elements *
@@ -48,8 +49,8 @@ let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 let recordingPhase: "idle" | "person1" | "person2" = "idle";
 
 let webcamRunning = false;
-const videoHeight = "720px";
-const videoWidth = "960px";
+const videoHeight = "360px";
+const videoWidth = "480px";
 
 // Create and wait for pose landmarker to finish loading
 poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
@@ -167,6 +168,7 @@ async function predictWebcam() {
         );
       }
 
+      // Drawing utils
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       for (const landmark of result.landmarks) {
@@ -179,6 +181,9 @@ async function predictWebcam() {
           PoseLandmarker.POSE_CONNECTIONS as any
         );
       }
+
+      // Draw a metaball at each landmark
+      skeletonMetaballs.userData.update(result.landmarks);
 
       canvasCtx.restore();
     });
@@ -307,7 +312,7 @@ renderer.domElement.id = "threeJsCanvas";
 document.body.appendChild(renderer.domElement);
 
 const camera = threeHelper.addCamera();
-camera.position.set(0, 0, 300);
+camera.position.set(0, 0, 10);
 camera.lookAt(0, 0, 0);
 
 // Add orbit controls
@@ -315,9 +320,21 @@ camera.lookAt(0, 0, 0);
 
 const scene: THREE.Scene = new THREE.Scene();
 
+// Rapier
+
+// initialize RAPIER
+await RAPIER.init();
+let gravity = { x: 0, y: 0, z: 0 };
+let world = new RAPIER.World(gravity);
+
 const directionalLight = threeHelper.addDirectionalLight();
 scene.add(directionalLight);
 scene.add(directionalLight.target);
+
+// Metaballs for joints
+// For now, this will reflect the LIVE body. Can generalize later for recorded + ML bodies
+const skeletonMetaballs = threeHelper.createSkeletonMetaballs(RAPIER, world);
+scene.add(skeletonMetaballs);
 
 // Create skeleton visualization for predicted pose
 const skeletonGroup = new THREE.Group();
@@ -325,6 +342,7 @@ scene.add(skeletonGroup);
 
 // Update skeleton
 // Doesn't work if I move this into a separate file
+// TODO: This needs to pass in which skeletonGroup
 function updateSkeleton(pose: number[]) {
   if (pose.length !== 66) return;
 
@@ -394,6 +412,9 @@ function animate() {
   if (recordingPhase !== "person2" && playbackStartTime !== 0) {
     playbackStartTime = 0;
   }
+
+  // Metaballs
+  world.step();
 
   renderer.render(scene, camera);
 }
