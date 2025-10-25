@@ -49,8 +49,8 @@ let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 let recordingPhase: "idle" | "person1" | "person2" = "idle";
 
 let webcamRunning = false;
-const videoHeight = "720px";
-const videoWidth = "960px";
+const videoHeight = "360px";
+const videoWidth = "480px";
 
 // Create and wait for pose landmarker to finish loading
 poseLandmarker = await mediaPipeHelper.createPoseLandmarker(
@@ -316,7 +316,7 @@ camera.position.set(0, 0, 10);
 camera.lookAt(0, 0, 0);
 
 // Add orbit controls
-threeHelper.addOrbitControls(camera, renderer.domElement);
+//threeHelper.addOrbitControls(camera, renderer.domElement);
 
 const scene: THREE.Scene = new THREE.Scene();
 

@@ -86,7 +86,7 @@ footer {
   transform: rotateY(180deg);
   -webkit-transform: rotateY(180deg);
   -moz-transform: rotateY(180deg);
-  border: 1px solid #fff;
+  border: 2px solid #fff;
 }
 
 .detectOnClick {
