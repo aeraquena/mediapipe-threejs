@@ -195,9 +195,6 @@ async function predictWebcam() {
         currentPoses.push(landmark);
       }
 
-      // could even put this in animate() function
-      skeletonMetaballs.userData.update(currentPoses);
-
       canvasCtx.restore();
     });
   }
@@ -349,54 +346,6 @@ scene.add(directionalLight.target);
 const skeletonMetaballs = threeHelper.createSkeletonMetaballs(RAPIER, world);
 scene.add(skeletonMetaballs);
 
-// Create skeleton visualization for predicted pose
-const skeletonGroup = new THREE.Group();
-scene.add(skeletonGroup);
-
-// Update skeleton
-// Doesn't work if I move this into a separate file
-// TODO: This needs to pass in which skeletonGroup
-function updateSkeleton(pose: number[]) {
-  if (pose.length !== 66) return;
-
-  // Update joint positions
-  for (let i = 0; i < 33; i++) {
-    const joint = skeletonGroup.getObjectByName(`joint_${i}`);
-    if (joint) {
-      // Convert normalized coords (0-1) to 3D space (-50 to 50)
-      const x = (pose[i * 2] - 0.5) * 100;
-      const y = (0.5 - pose[i * 2 + 1]) * 100; // Flip Y
-      joint.position.set(x, y, 0);
-    }
-  }
-
-  // Update connection lines
-  for (const [start, end] of mediaPipeHelper.POSE_CONNECTIONS) {
-    const line = skeletonGroup.getObjectByName(
-      `connection_${start}_${end}`
-    ) as THREE.Line;
-    if (line) {
-      const startJoint = skeletonGroup.getObjectByName(`joint_${start}`);
-      const endJoint = skeletonGroup.getObjectByName(`joint_${end}`);
-
-      if (startJoint && endJoint) {
-        const positions = line.geometry.attributes.position
-          .array as Float32Array;
-        positions[0] = startJoint.position.x;
-        positions[1] = startJoint.position.y;
-        positions[2] = startJoint.position.z;
-        positions[3] = endJoint.position.x;
-        positions[4] = endJoint.position.y;
-        positions[5] = endJoint.position.z;
-        line.geometry.attributes.position.needsUpdate = true;
-      }
-    }
-  }
-}
-
-// Initialize skeleton
-threeHelper.createSkeletonVisualization(skeletonGroup);
-
 // Animate scene with Three.js
 function animate() {
   // Update predicted skeleton
@@ -409,25 +358,11 @@ function animate() {
     const frameIndex = Math.floor(progress * person1Poses.length);
 
     if (frameIndex < person1Poses.length) {
-      updateSkeleton(person1Poses[frameIndex]);
-      skeletonGroup.visible = true;
-
-      // TODO: Add person1 to landmarks[]
-      // Update skeleton metaballs with person 1 pose
-      //skeletonMetaballs.userData.update(person1Poses[frameIndex]);
-    } else {
-      // Playback finished, but we wait for the recording to finish
-      skeletonGroup.visible = false;
+      // Add person1Poses to currentPoses
+      currentPoses.push(tfHelper.unflattenPose(person1Poses[frameIndex]));
     }
   } else if (predictedPose.length === 66 && mlMode === MLMode.PREDICTING) {
-    updateSkeleton(predictedPose);
-    skeletonGroup.visible = true;
-
-    // TODO: Add AI to landmarks[]
-    // Update skeleton metaballs with predicted pose
-    //skeletonMetaballs.userData.update(predictedPose);
-  } else {
-    skeletonGroup.visible = false;
+    currentPoses.push(tfHelper.unflattenPose(predictedPose));
   }
 
   if (recordingPhase !== "person2" && playbackStartTime !== 0) {
@@ -435,6 +370,7 @@ function animate() {
   }
 
   // Metaballs
+  skeletonMetaballs.userData.update(currentPoses);
   world.step();
 
   renderer.render(scene, camera);

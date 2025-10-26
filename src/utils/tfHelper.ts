@@ -28,6 +28,20 @@ export function flattenPose(landmarks: NormalizedLandmark[]): number[] {
   return pose;
 }
 
+// Helper: Unflatten 66D array into 33 NormalizedLandmarks {x: number, y: number}
+export function unflattenPose(pose: number[]): NormalizedLandmark[] {
+  const landmarks: NormalizedLandmark[] = [];
+  for (let i = 0; i < 33; i++) {
+    landmarks.push({
+      x: pose[i * 2] ?? 0,
+      y: pose[i * 2 + 1] ?? 0,
+      z: 0, // MediaPipe landmarks have z, setting to 0 as default
+      visibility: 1, // Optional: set default visibility
+    });
+  }
+  return landmarks;
+}
+
 // Define model architecture
 // Updated model: 66D input → 66D output
 function createModel() {
