@@ -19,10 +19,13 @@ em {
 
 video {
   clear: both;
-  display: none;
   transform: rotateY(180deg);
   -webkit-transform: rotateY(180deg);
   -moz-transform: rotateY(180deg);
+}
+
+#webcam {
+  display: none;
 }
 
 section {
