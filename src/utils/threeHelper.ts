@@ -63,6 +63,14 @@ function addBallsBetweenJoints(
   }
 }
 
+// Averages the x, y position of two joints and returns a new joint
+function averageJoints(
+  joint1: { x: number; y: number },
+  joint2: { x: number; y: number }
+): { x: number; y: number } {
+  return { x: (joint1.x + joint2.x) / 2, y: (joint1.y + joint2.y) / 2 };
+}
+
 // Create and return skeleton metaballs
 export function createSkeletonMetaballs(RAPIER: any, world: any) {
   // Initialize bodies for joints
@@ -143,42 +151,18 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         // Add the skeleton's torso
         // Calculate X, Y average between left and right shoulder (x), left shoulder and left hip (y)
 
-        // Torso top
-        addBallWithPositionAndSize(
-          (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
-            landmarks[j][JOINTS.LEFT_SHOULDER].x) *
-            0.5,
-          landmarks[j][JOINTS.RIGHT_HIP].y +
-            (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
-              landmarks[j][JOINTS.RIGHT_HIP].y) *
-              0.75,
-          9.5 * strength,
-          skeletonMetaballs
-        );
-
-        // Torso center
-        addBallWithPositionAndSize(
-          (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
-            landmarks[j][JOINTS.LEFT_SHOULDER].x) *
-            0.5,
-          landmarks[j][JOINTS.RIGHT_HIP].y +
-            (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
-              landmarks[j][JOINTS.RIGHT_HIP].y) *
-              0.5,
-          10.5 * strength,
-          skeletonMetaballs
-        );
-
-        // Torso bottom
-        addBallWithPositionAndSize(
-          (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
-            landmarks[j][JOINTS.LEFT_SHOULDER].x) *
-            0.5,
-          landmarks[j][JOINTS.RIGHT_HIP].y +
-            (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
-              landmarks[j][JOINTS.RIGHT_HIP].y) *
-              0.33,
-          10.5 * strength,
+        // Torso
+        addBallsBetweenJoints(
+          averageJoints(
+            landmarks[j][JOINTS.LEFT_SHOULDER],
+            landmarks[j][JOINTS.RIGHT_SHOULDER]
+          ),
+          averageJoints(
+            landmarks[j][JOINTS.LEFT_HIP],
+            landmarks[j][JOINTS.RIGHT_HIP]
+          ),
+          8,
+          6 * strength,
           skeletonMetaballs
         );
 
