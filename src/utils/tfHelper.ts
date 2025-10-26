@@ -1,6 +1,5 @@
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 import * as tf from "@tensorflow/tfjs";
-import * as tfvis from "@tensorflow/tfjs-vis";
 
 // Store full pose data (33 landmarks × 2 coords = 66 values)
 export type PoseDatum = {
@@ -134,11 +133,8 @@ export async function run(
     }))
   );
 
-  renderScatterplot(values);
-
   // Create the model
   const model = createModel();
-  tfvis.show.modelSummary({ name: "Model Summary" }, model);
 
   // Convert the data to a form we can use for training.
   const tensorData = convertToTensor(data);
@@ -173,24 +169,7 @@ async function trainModel(model: any, inputs: any, labels: any) {
     epochs,
     // number of times the model is going to look at the entire dataset that you provide it
     shuffle: true,
-    callbacks: tfvis.show.fitCallbacks(
-      { name: "Training Performance" },
-      ["loss", "mse"],
-      { height: 200, callbacks: ["onEpochEnd"] }
-    ),
   });
-}
-
-function renderScatterplot(values: { x: number; y: number }[]) {
-  tfvis.render.scatterplot(
-    { name: "Training Data Sample" },
-    { values },
-    {
-      xLabel: "Person 1 Pose",
-      yLabel: "Person 2 Pose",
-      height: 300,
-    }
-  );
 }
 
 // Predict full 66D pose from input pose
