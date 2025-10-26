@@ -12,6 +12,7 @@ import RAPIER from "@dimforge/rapier3d-compat";
  ***************/
 
 let enableWebcamButton: HTMLButtonElement | null = null;
+let videoToggleButton: HTMLButtonElement | null = null;
 let trainBodyButton: HTMLButtonElement | null = null;
 let danceButton: HTMLButtonElement | null = null;
 
@@ -24,9 +25,16 @@ const drawingUtils = new DrawingUtils(canvasCtx as CanvasRenderingContext2D);
 
 const countdownDuration = 3;
 
+videoToggleButton = document.getElementById(
+  "videoToggleButton"
+) as HTMLButtonElement | null;
+
+videoToggleButton?.addEventListener("click", toggleVideo);
+
 trainBodyButton = document.getElementById(
   "trainBodyButton"
 ) as HTMLButtonElement | null;
+
 trainBodyButton?.addEventListener("click", () => {
   uiHelper.startCountdown(countdownDuration);
   setTimeout(() => {
@@ -37,6 +45,7 @@ trainBodyButton?.addEventListener("click", () => {
 danceButton = document.getElementById(
   "danceButton"
 ) as HTMLButtonElement | null;
+
 danceButton?.addEventListener("click", dance);
 
 /**************************
@@ -79,10 +88,6 @@ let myNormalizations: any;
 let playbackStartTime = 0;
 
 let predictedPose: number[] = []; // 66D predicted pose
-
-/*********
- * Poses *
- *********/
 
 // The current pose for all humans, playback, and AI
 // TODO: We only need x, y, not z or visibility
@@ -207,6 +212,21 @@ async function predictWebcam() {
 /******************
  * AI Training UI *
  ******************/
+
+function toggleVideo() {
+  if (video.style.display === "none" || video.style.display === "") {
+    console.log("turn on");
+    video.style.display = "block"; // Show the element
+    if (videoToggleButton) {
+      videoToggleButton.innerText = "VIDEO OFF";
+    }
+  } else {
+    video.style.display = "none"; // Hide the element
+    if (videoToggleButton) {
+      videoToggleButton.innerText = "VIDEO ON";
+    }
+  }
+}
 
 // Train AI on body poses
 function trainBody() {
