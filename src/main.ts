@@ -80,6 +80,14 @@ let playbackStartTime = 0;
 
 let predictedPose: number[] = []; // 66D predicted pose
 
+/*********
+ * Poses *
+ *********/
+
+// The current pose for all humans, playback, and AI
+// TODO: We only need x, y, not z or visibility
+let currentPoses: NormalizedLandmark[][] = [];
+
 /***********************************************************************
 // MediaPipe: Continuously grab image from webcam stream and detect it.
 ************************************************************************/
@@ -168,6 +176,9 @@ async function predictWebcam() {
         );
       }
 
+      // Clear current poses
+      currentPoses = [];
+
       // Drawing utils
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -180,10 +191,12 @@ async function predictWebcam() {
           landmark as NormalizedLandmark[],
           PoseLandmarker.POSE_CONNECTIONS as any
         );
+
+        currentPoses.push(landmark);
       }
 
-      // Draw a metaball at each landmark
-      skeletonMetaballs.userData.update(result.landmarks);
+      // could even put this in animate() function
+      skeletonMetaballs.userData.update(currentPoses);
 
       canvasCtx.restore();
     });
@@ -398,6 +411,10 @@ function animate() {
     if (frameIndex < person1Poses.length) {
       updateSkeleton(person1Poses[frameIndex]);
       skeletonGroup.visible = true;
+
+      // TODO: Add person1 to landmarks[]
+      // Update skeleton metaballs with person 1 pose
+      //skeletonMetaballs.userData.update(person1Poses[frameIndex]);
     } else {
       // Playback finished, but we wait for the recording to finish
       skeletonGroup.visible = false;
@@ -405,6 +422,10 @@ function animate() {
   } else if (predictedPose.length === 66 && mlMode === MLMode.PREDICTING) {
     updateSkeleton(predictedPose);
     skeletonGroup.visible = true;
+
+    // TODO: Add AI to landmarks[]
+    // Update skeleton metaballs with predicted pose
+    //skeletonMetaballs.userData.update(predictedPose);
   } else {
     skeletonGroup.visible = false;
   }

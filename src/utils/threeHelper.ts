@@ -121,12 +121,12 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
     skeletonBodies.push(body);
   }
 
-  const matcapMat = new THREE.MeshMatcapMaterial();
-  // TODO: Change for different people. Can be randomly picked from set
-  matcapMat.color = new THREE.Color().setHex(0x4deeea);
+  const normalMat = new THREE.MeshNormalMaterial();
+  //const matcapMat = new THREE.MeshMatcapMaterial();
+  //matcapMat.color = new THREE.Color().setHex(0x4deeea);
   const skeletonMetaballs = new MarchingCubes(
     96, // resolution of metaball,
-    matcapMat,
+    normalMat,
     true, // enableUVs
     true, // enableColors
     90000 // max poly count
@@ -139,11 +139,11 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
       // loop through all existing rigid bodies, get add a metaball to each
       for (let j = 0; j < landmarks.length; j++) {
         // Calculate z position of landmarks[0][0] and scale strength
-        const zPos = landmarks[j][JOINTS.NOSE].z;
+        //const zPos = landmarks[j][JOINTS.NOSE].z;
 
         // TODO: Make this more accurate
         // scale -1...0 to 1...0
-        const zPosScaled = scaleValue(zPos, -1, 0, 1, 0);
+        //const zPosScaled = scaleValue(zPos, -1, 0, 1, 0);
 
         const strength = 0.15; // * zPosScaled; // size
 
