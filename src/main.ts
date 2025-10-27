@@ -38,7 +38,7 @@ trainBodyButton = document.getElementById(
 trainBodyButton?.addEventListener("click", () => {
   uiHelper.startCountdown(countdownDuration);
   setTimeout(() => {
-    trainBody();
+    recordBodies();
   }, countdownDuration * 1000);
 });
 
@@ -55,7 +55,7 @@ danceButton?.addEventListener("click", dance);
 let poseLandmarker: PoseLandmarker | undefined = undefined;
 let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 
-let recordingPhase: "idle" | "person1" | "person2" = "idle";
+let recordingPhase: "idle" | "person1" | "person2" | "both" = "idle";
 
 let webcamRunning = false;
 const videoHeight = "360px";
@@ -92,6 +92,8 @@ let predictedPose: number[] = []; // 66D predicted pose
 // The current pose for all humans, playback, and AI
 // TODO: We only need x, y, not z or visibility
 let currentPoses: NormalizedLandmark[][] = [];
+
+let numberOfPlayers: number;
 
 /***********************************************************************
 // MediaPipe: Continuously grab image from webcam stream and detect it.
@@ -162,13 +164,27 @@ async function predictWebcam() {
     lastVideoTime = video.currentTime;
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
       // Training: record poses separately for each person
-      if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
-        const pose = tfHelper.flattenPose(result.landmarks[0]);
+      if (mlMode === MLMode.TRAINING) {
+        if (
+          numberOfPlayers === 2 && // recordingPhase === 'both'
+          result.landmarks[0] &&
+          result.landmarks[1]
+        ) {
+          // 2 person mode
+          const pose1 = tfHelper.flattenPose(result.landmarks[0]);
+          const pose2 = tfHelper.flattenPose(result.landmarks[1]);
 
-        if (recordingPhase === "person1") {
-          person1Poses.push(pose);
-        } else if (recordingPhase === "person2") {
-          person2Poses.push(pose);
+          person1Poses.push(pose1);
+          person2Poses.push(pose2);
+        } else if (result.landmarks[0]) {
+          // 1 person mode
+          const pose = tfHelper.flattenPose(result.landmarks[0]);
+
+          if (recordingPhase === "person1") {
+            person1Poses.push(pose);
+          } else if (recordingPhase === "person2") {
+            person2Poses.push(pose);
+          }
         }
       }
       // Predicting: input pose, predict output
@@ -179,6 +195,10 @@ async function predictWebcam() {
           inputPose,
           myNormalizations
         );
+      } else {
+        // Idle mode - update number of players
+        numberOfPlayers = result.landmarks.length;
+        console.log("number of players: ", numberOfPlayers);
       }
 
       // Clear current poses
@@ -228,30 +248,90 @@ function toggleVideo() {
   }
 }
 
-// Train AI on body poses
-function trainBody() {
-  // Phase 1: Record Person 1
-  if (person1Poses.length === 0) {
-    recordingPhase = "person1";
-    mlMode = MLMode.TRAINING;
-    person1Poses = [];
+async function trainModel() {
+  if (person1Poses.length > 10 && person2Poses.length > 10) {
+    // Align datasets to same length
+    const minLen = Math.min(person1Poses.length, person2Poses.length);
+    const trainingData: tfHelper.PoseDatum[] = [];
+
+    for (let i = 0; i < minLen; i++) {
+      trainingData.push({
+        person1Pose: person1Poses[i],
+        person2Pose: person2Poses[i],
+      });
+    }
 
     if (trainBodyButton) {
-      trainBodyButton.innerText = "RECORDING PERSON 1...";
-      trainBodyButton.disabled = true;
+      trainBodyButton.innerText = "TRAINING MODEL...";
     }
-    uiHelper.startCountdown(trainingDuration);
 
-    setTimeout(() => {
-      mlMode = MLMode.IDLE;
+    let result: any = await tfHelper.run(trainingData);
+    myModel = result.model;
+    myNormalizations = result.tensorData;
+
+    if (trainBodyButton) {
+      trainBodyButton.innerText = "RETRAIN MODEL";
+      trainBodyButton.disabled = false;
+    }
+  } else {
+    if (trainBodyButton) {
+      trainBodyButton.innerText = "RETRAIN MODEL";
+      trainBodyButton.disabled = false;
+    }
+    alert("Not enough training data collected. Please try again.");
+  }
+}
+
+// Toggles recordingPhase and MLMode
+function recordBodies() {
+  // Phase 1: Record Person 1
+  if (person1Poses.length === 0) {
+    if (numberOfPlayers === 2) {
+      mlMode = MLMode.TRAINING;
+      recordingPhase = "both";
+      person1Poses = [];
+      person2Poses = [];
 
       if (trainBodyButton) {
-        trainBodyButton.innerText = "RECORD PERSON 2";
-        trainBodyButton.disabled = false;
+        trainBodyButton.innerText = "RECORDING BOTH...";
+        trainBodyButton.disabled = true;
       }
 
-      console.log(`Person 1: Collected ${person1Poses.length} poses`);
-    }, trainingDuration * 1000);
+      uiHelper.startCountdown(trainingDuration);
+
+      setTimeout(async () => {
+        // TODO: Can I make this a function, to not repeat myself twice?
+        // But it does something different...
+        mlMode = MLMode.IDLE;
+        recordingPhase = "idle";
+
+        console.log(`Person 1: Collected ${person1Poses.length} poses`);
+        console.log(`Person 2: Collected ${person2Poses.length} poses`);
+
+        trainModel();
+      }, trainingDuration * 1000);
+    } else {
+      recordingPhase = "person1";
+      mlMode = MLMode.TRAINING;
+      person1Poses = [];
+
+      if (trainBodyButton) {
+        trainBodyButton.innerText = "RECORDING PERSON 1...";
+        trainBodyButton.disabled = true;
+      }
+      uiHelper.startCountdown(trainingDuration);
+
+      setTimeout(() => {
+        mlMode = MLMode.IDLE;
+
+        if (trainBodyButton) {
+          trainBodyButton.innerText = "RECORD PERSON 2";
+          trainBodyButton.disabled = false;
+        }
+
+        console.log(`Person 1: Collected ${person1Poses.length} poses`);
+      }, trainingDuration * 1000);
+    }
   }
   // Phase 2: Record Person 2 and train model
   else if (person1Poses.length > 0 && person2Poses.length === 0) {
@@ -266,43 +346,12 @@ function trainBody() {
     uiHelper.startCountdown(trainingDuration);
 
     setTimeout(async () => {
-      // TODO: Can I make this a function, to not repeat myself twice?
       mlMode = MLMode.IDLE;
       recordingPhase = "idle";
 
       console.log(`Person 2: Collected ${person2Poses.length} poses`);
 
-      if (person1Poses.length > 10 && person2Poses.length > 10) {
-        // Align datasets to same length
-        const minLen = Math.min(person1Poses.length, person2Poses.length);
-        const trainingData: tfHelper.PoseDatum[] = [];
-
-        for (let i = 0; i < minLen; i++) {
-          trainingData.push({
-            person1Pose: person1Poses[i],
-            person2Pose: person2Poses[i],
-          });
-        }
-
-        if (trainBodyButton) {
-          trainBodyButton.innerText = "TRAINING MODEL...";
-        }
-
-        let result: any = await tfHelper.run(trainingData);
-        myModel = result.model;
-        myNormalizations = result.tensorData;
-
-        if (trainBodyButton) {
-          trainBodyButton.innerText = "RETRAIN MODEL";
-          trainBodyButton.disabled = false;
-        }
-      } else {
-        if (trainBodyButton) {
-          trainBodyButton.innerText = "RETRAIN MODEL";
-          trainBodyButton.disabled = false;
-        }
-        alert("Not enough training data collected. Please try again.");
-      }
+      trainModel();
     }, trainingDuration * 1000);
   }
   // Reset: Start over
@@ -313,6 +362,7 @@ function trainBody() {
     myNormalizations = null;
 
     if (trainBodyButton) {
+      // TODO: Adjust for 2 person mode
       trainBodyButton.innerText = "RECORD PERSON 1";
     }
     alert("Reset! Click button to record Person 1 again.");
