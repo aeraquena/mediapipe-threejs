@@ -3,7 +3,13 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { JOINTS, POSE_CONNECTIONS } from "./mediaPipeHelper";
 import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
 import { getJoint } from "./getBody";
-import { scaleValue } from "./math";
+
+const bodyColors: THREE.Color[] = [
+  new THREE.Color().setHex(0x4deeea), // cyan
+  new THREE.Color().setHex(0xf000ff), // magenta
+  new THREE.Color().setHex(0x74ee15), // lime green
+  new THREE.Color().setHex(0xffe700), // yellow
+];
 
 export const addCamera = (): THREE.PerspectiveCamera => {
   return new THREE.PerspectiveCamera(
@@ -29,46 +35,11 @@ export const addDirectionalLight = (): THREE.DirectionalLight => {
   return directionalLight;
 };
 
-// Initialize skeleton - creates joints and lines with names
-export function createSkeletonVisualization(skeletonGroup: THREE.Group) {
-  // Clear previous skeleton
-  while (skeletonGroup.children.length > 0) {
-    skeletonGroup.remove(skeletonGroup.children[0]);
-  }
-
-  // Create spheres for joints
-  const jointGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-  const jointMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // green
-
-  for (let i = 0; i < 33; i++) {
-    const joint = new THREE.Mesh(jointGeometry, jointMaterial);
-    joint.name = `joint_${i}`;
-    skeletonGroup.add(joint);
-  }
-
-  // Create lines for connections
-  for (const [start, end] of POSE_CONNECTIONS) {
-    const lineGeometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(6); // 2 points * 3 coords
-    lineGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(positions, 3)
-    );
-
-    const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0xff0000, // red
-      linewidth: 2,
-    });
-    const line = new THREE.Line(lineGeometry, lineMaterial);
-    line.name = `connection_${start}_${end}`;
-    skeletonGroup.add(line);
-  }
-}
-
 function addBallWithPositionAndSize(
   xPos: number,
   yPos: number,
   strength: number,
+  bodyIndex: number,
   skeletonMetaballs: MarchingCubes
 ) {
   skeletonMetaballs.addBall(
@@ -77,7 +48,7 @@ function addBallWithPositionAndSize(
     0,
     strength,
     6, // subtract = lightness
-    new THREE.Color().setRGB(Math.random(), Math.random(), Math.random()) // TODO: This color doesn't work
+    bodyColors[bodyIndex % bodyColors.length]
   );
 }
 
@@ -87,6 +58,7 @@ function addBallsBetweenJoints(
   joint2: { x: number; y: number },
   numBalls: number,
   strength: number,
+  bodyIndex: number,
   skeletonMetaballs: MarchingCubes
 ) {
   for (let i = 1; i <= numBalls; i++) {
@@ -94,9 +66,18 @@ function addBallsBetweenJoints(
       joint2.x + (joint1.x - joint2.x) * (i / (numBalls + 1)),
       joint2.y + (joint1.y - joint2.y) * (i / (numBalls + 1)),
       strength,
+      bodyIndex,
       skeletonMetaballs
     );
   }
+}
+
+// Averages the x, y position of two joints and returns a new joint
+function averageJoints(
+  joint1: { x: number; y: number },
+  joint2: { x: number; y: number }
+): { x: number; y: number } {
+  return { x: (joint1.x + joint2.x) / 2, y: (joint1.y + joint2.y) / 2 };
 }
 
 // Create and return skeleton metaballs
@@ -113,17 +94,19 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         >
       | undefined;
     rigid: any;
-    update: () => THREE.Vector3;
-    name: string;
+    update?: () => THREE.Vector3;
+    name?: string;
   }[] = [];
   for (let i = 0; i < numSkeletonBodies; i++) {
     const body = getJoint({ debug: true, RAPIER, world, xPos: 0, yPos: 0 });
     skeletonBodies.push(body);
   }
 
-  const matcapMat = new THREE.MeshMatcapMaterial();
-  // TODO: Change for different people. Can be randomly picked from set
-  matcapMat.color = new THREE.Color().setHex(0x4deeea);
+  //const normalMat = new THREE.MeshNormalMaterial();
+  const matcapMat = new THREE.MeshMatcapMaterial({
+    vertexColors: true,
+  });
+  //matcapMat.color = new THREE.Color().setHex(0x4deeea);
   const skeletonMetaballs = new MarchingCubes(
     96, // resolution of metaball,
     matcapMat,
@@ -134,26 +117,37 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
   skeletonMetaballs.scale.setScalar(5); // entire metaball system
   skeletonMetaballs.isolation = 750; // blobbiness or size. smaller number = bigger
   skeletonMetaballs.userData = {
+    // landmarks = currentPoses
     update(landmarks: any) {
       skeletonMetaballs.reset();
       // loop through all existing rigid bodies, get add a metaball to each
       for (let j = 0; j < landmarks.length; j++) {
         // Calculate z position of landmarks[0][0] and scale strength
-        const zPos = landmarks[j][JOINTS.NOSE].z;
+        //const zPos = landmarks[j][JOINTS.NOSE].z;
 
         // TODO: Make this more accurate
         // scale -1...0 to 1...0
-        const zPosScaled = scaleValue(zPos, -1, 0, 1, 0);
+        //const zPosScaled = scaleValue(zPos, -1, 0, 1, 0);
 
-        const strength = 0.15; // * zPosScaled; // size
+        const strength = 0.08; // * zPosScaled; // size
 
         skeletonBodies.forEach((b, i) => {
-          // Skip all head landmarks and foot index
-          if (i > 10 && i < 31) {
+          // Skip all head landmarks, foot index, and hands
+          if (
+            i > 10 &&
+            i < 31 &&
+            i !== JOINTS.LEFT_PINKY &&
+            i !== JOINTS.RIGHT_PINKY &&
+            i !== JOINTS.LEFT_INDEX &&
+            i !== JOINTS.RIGHT_INDEX &&
+            i !== JOINTS.LEFT_THUMB &&
+            i !== JOINTS.RIGHT_THUMB
+          ) {
             addBallWithPositionAndSize(
               landmarks[j][i].x,
               landmarks[j][i].y,
               strength,
+              j,
               skeletonMetaballs
             );
           }
@@ -163,49 +157,27 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallWithPositionAndSize(
           landmarks[j][JOINTS.NOSE].x,
           landmarks[j][JOINTS.NOSE].y,
-          7 * strength,
+          15 * strength,
+          j,
           skeletonMetaballs
         );
 
         // Add the skeleton's torso
         // Calculate X, Y average between left and right shoulder (x), left shoulder and left hip (y)
 
-        // Torso top
-        addBallWithPositionAndSize(
-          (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
-            landmarks[j][JOINTS.LEFT_SHOULDER].x) *
-            0.5,
-          landmarks[j][JOINTS.RIGHT_HIP].y +
-            (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
-              landmarks[j][JOINTS.RIGHT_HIP].y) *
-              0.75,
-          4.75 * strength,
-          skeletonMetaballs
-        );
-
-        // Torso center
-        addBallWithPositionAndSize(
-          (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
-            landmarks[j][JOINTS.LEFT_SHOULDER].x) *
-            0.5,
-          landmarks[j][JOINTS.RIGHT_HIP].y +
-            (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
-              landmarks[j][JOINTS.RIGHT_HIP].y) *
-              0.5,
-          5.25 * strength,
-          skeletonMetaballs
-        );
-
-        // Torso bottom
-        addBallWithPositionAndSize(
-          (landmarks[j][JOINTS.RIGHT_SHOULDER].x +
-            landmarks[j][JOINTS.LEFT_SHOULDER].x) *
-            0.5,
-          landmarks[j][JOINTS.RIGHT_HIP].y +
-            (landmarks[j][JOINTS.RIGHT_SHOULDER].y -
-              landmarks[j][JOINTS.RIGHT_HIP].y) *
-              0.33,
-          5.25 * strength,
+        // Torso
+        addBallsBetweenJoints(
+          averageJoints(
+            landmarks[j][JOINTS.LEFT_SHOULDER],
+            landmarks[j][JOINTS.RIGHT_SHOULDER]
+          ),
+          averageJoints(
+            landmarks[j][JOINTS.LEFT_HIP],
+            landmarks[j][JOINTS.RIGHT_HIP]
+          ),
+          10,
+          6 * strength,
+          j,
           skeletonMetaballs
         );
 
@@ -213,8 +185,9 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.RIGHT_SHOULDER],
           landmarks[j][JOINTS.RIGHT_ELBOW],
-          2,
+          10,
           strength,
+          j,
           skeletonMetaballs
         );
 
@@ -222,8 +195,9 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.LEFT_SHOULDER],
           landmarks[j][JOINTS.LEFT_ELBOW],
-          2,
+          10,
           strength,
+          j,
           skeletonMetaballs
         );
 
@@ -231,8 +205,9 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.RIGHT_ELBOW],
           landmarks[j][JOINTS.RIGHT_WRIST],
-          2,
+          10,
           strength,
+          j,
           skeletonMetaballs
         );
 
@@ -240,8 +215,9 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.LEFT_ELBOW],
           landmarks[j][JOINTS.LEFT_WRIST],
-          2,
+          10,
           strength,
+          j,
           skeletonMetaballs
         );
 
@@ -249,8 +225,9 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.RIGHT_HIP],
           landmarks[j][JOINTS.RIGHT_KNEE],
-          4,
+          12,
           strength,
+          j,
           skeletonMetaballs
         );
 
@@ -258,8 +235,9 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.RIGHT_KNEE],
           landmarks[j][JOINTS.RIGHT_ANKLE],
-          4,
+          12,
           strength,
+          j,
           skeletonMetaballs
         );
 
@@ -267,8 +245,9 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.LEFT_HIP],
           landmarks[j][JOINTS.LEFT_KNEE],
-          4,
+          12,
           strength,
+          j,
           skeletonMetaballs
         );
 
@@ -276,8 +255,9 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.LEFT_KNEE],
           landmarks[j][JOINTS.LEFT_ANKLE],
-          4,
+          12,
           strength,
+          j,
           skeletonMetaballs
         );
       }

@@ -1,11 +1,6 @@
 import * as THREE from "three";
 
-const sceneMiddle = new THREE.Vector3(0, 0, 0);
-const metaOffset = new THREE.Vector3(0.5, 0.5, 0.5);
-
 // Return a joint with the x, y position passed in
-// Could take in pose: number[]
-// Needs to have names
 function getJoint({
   debug = false,
   RAPIER,
@@ -50,21 +45,8 @@ function getJoint({
     mesh = new THREE.Mesh(geometry, material);
   }
 
-  // TODO: This is no longer used - remove
-  function update(/* take in new x, y */) {
-    rigid.resetForces(true);
-    let { x, y, z } = rigid.translation();
-    let pos = new THREE.Vector3(x, y, z);
-    let dir = pos.clone().sub(sceneMiddle).normalize();
-    rigid.addForce(dir.multiplyScalar(-0.5), true);
-    if (debug === true) {
-      mesh?.position.copy(pos);
-    }
-    pos.multiplyScalar(0.1).add(metaOffset);
-    return pos;
-  }
   // it only has a mesh if debug is true
-  return { color, mesh, rigid, update, name: "" };
+  return { color, mesh, rigid };
 }
 
 export { getJoint };

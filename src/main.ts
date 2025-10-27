@@ -12,6 +12,7 @@ import RAPIER from "@dimforge/rapier3d-compat";
  ***************/
 
 let enableWebcamButton: HTMLButtonElement | null = null;
+let videoToggleButton: HTMLButtonElement | null = null;
 let trainBodyButton: HTMLButtonElement | null = null;
 let danceButton: HTMLButtonElement | null = null;
 
@@ -24,19 +25,27 @@ const drawingUtils = new DrawingUtils(canvasCtx as CanvasRenderingContext2D);
 
 const countdownDuration = 3;
 
+videoToggleButton = document.getElementById(
+  "videoToggleButton"
+) as HTMLButtonElement | null;
+
+videoToggleButton?.addEventListener("click", toggleVideo);
+
 trainBodyButton = document.getElementById(
   "trainBodyButton"
 ) as HTMLButtonElement | null;
+
 trainBodyButton?.addEventListener("click", () => {
   uiHelper.startCountdown(countdownDuration);
   setTimeout(() => {
-    trainBody();
+    recordBodies();
   }, countdownDuration * 1000);
 });
 
 danceButton = document.getElementById(
   "danceButton"
 ) as HTMLButtonElement | null;
+
 danceButton?.addEventListener("click", dance);
 
 /**************************
@@ -46,7 +55,7 @@ danceButton?.addEventListener("click", dance);
 let poseLandmarker: PoseLandmarker | undefined = undefined;
 let runningMode: "IMAGE" | "VIDEO" = "IMAGE";
 
-let recordingPhase: "idle" | "person1" | "person2" = "idle";
+let recordingPhase: "idle" | "person1" | "person2" | "both" = "idle";
 
 let webcamRunning = false;
 const videoHeight = "360px";
@@ -74,11 +83,23 @@ let person2Poses: number[][] = [];
 let mlMode = MLMode.IDLE;
 let trainingDuration = 10;
 
+// Model of Person 2, controlled by Person 1
 let myModel: any;
 let myNormalizations: any;
 let playbackStartTime = 0;
 
+// Model of Person 1, controlled by Person 2
+let myModel2: any;
+let myNormalizations2: any;
+
 let predictedPose: number[] = []; // 66D predicted pose
+let predictedPose2: number[] = []; // 66D predicted pose
+
+// The current pose for all humans, playback, and AI
+// TODO: We only need x, y, not z or visibility
+let currentPoses: NormalizedLandmark[][] = [];
+
+let numberOfPlayers: number;
 
 /***********************************************************************
 // MediaPipe: Continuously grab image from webcam stream and detect it.
@@ -144,29 +165,74 @@ async function predictWebcam() {
     runningMode = "VIDEO";
     await poseLandmarker!.setOptions({ runningMode: "VIDEO" });
   }
+
   let startTimeMs = performance.now();
+
   if (lastVideoTime !== video.currentTime) {
     lastVideoTime = video.currentTime;
     poseLandmarker!.detectForVideo(video, startTimeMs, (result) => {
       // Training: record poses separately for each person
-      if (mlMode === MLMode.TRAINING && result.landmarks[0]) {
-        const pose = tfHelper.flattenPose(result.landmarks[0]);
+      if (mlMode === MLMode.TRAINING) {
+        if (
+          numberOfPlayers === 2 && // recordingPhase === 'both'
+          result.landmarks[0] &&
+          result.landmarks[1]
+        ) {
+          // 2 person mode
+          const pose1 = tfHelper.flattenPose(result.landmarks[0]);
+          const pose2 = tfHelper.flattenPose(result.landmarks[1]);
 
-        if (recordingPhase === "person1") {
-          person1Poses.push(pose);
-        } else if (recordingPhase === "person2") {
-          person2Poses.push(pose);
+          person1Poses.push(pose1);
+          person2Poses.push(pose2);
+        } else if (result.landmarks[0]) {
+          // 1 person mode
+          const pose = tfHelper.flattenPose(result.landmarks[0]);
+
+          if (recordingPhase === "person1") {
+            person1Poses.push(pose);
+          } else if (recordingPhase === "person2") {
+            person2Poses.push(pose);
+          }
         }
       }
       // Predicting: input pose, predict output
       else if (mlMode === MLMode.PREDICTING && result.landmarks[0]) {
+        // Model 1: Person 1 controls Person 2
         const inputPose = tfHelper.flattenPose(result.landmarks[0]);
         predictedPose = tfHelper.predictPose(
           myModel,
           inputPose,
           myNormalizations
         );
+
+        // Model 2: Person 2 controls Person 1
+        if (myModel2) {
+          let inputPose;
+          if (numberOfPlayers === 2 && result.landmarks[1]) {
+            // Change to 1 when 2 people are present
+            inputPose = tfHelper.flattenPose(result.landmarks[1]);
+          } else if (result.landmarks[0]) {
+            // If only 1 person present, control both models with person 1
+            inputPose = tfHelper.flattenPose(result.landmarks[0]);
+          }
+          if (inputPose) {
+            predictedPose2 = tfHelper.predictPose(
+              myModel2,
+              inputPose,
+              myNormalizations2
+            );
+          }
+        }
       }
+
+      if (mlMode !== MLMode.TRAINING) {
+        // Update number of players
+        numberOfPlayers = result.landmarks.length;
+        console.log("number of players: ", numberOfPlayers);
+      }
+
+      // Clear current poses
+      currentPoses = [];
 
       // Drawing utils
       canvasCtx.save();
@@ -180,10 +246,9 @@ async function predictWebcam() {
           landmark as NormalizedLandmark[],
           PoseLandmarker.POSE_CONNECTIONS as any
         );
-      }
 
-      // Draw a metaball at each landmark
-      skeletonMetaballs.userData.update(result.landmarks);
+        currentPoses.push(landmark);
+      }
 
       canvasCtx.restore();
     });
@@ -198,30 +263,109 @@ async function predictWebcam() {
  * AI Training UI *
  ******************/
 
-// Train AI on body poses
-function trainBody() {
-  // Phase 1: Record Person 1
-  if (person1Poses.length === 0) {
-    recordingPhase = "person1";
-    mlMode = MLMode.TRAINING;
-    person1Poses = [];
+function toggleVideo() {
+  if (video.style.display === "none" || video.style.display === "") {
+    video.style.display = "block"; // Show the element
+    if (videoToggleButton) {
+      videoToggleButton.innerText = "VIDEO OFF";
+    }
+  } else {
+    video.style.display = "none"; // Hide the element
+    if (videoToggleButton) {
+      videoToggleButton.innerText = "VIDEO ON";
+    }
+  }
+}
+
+async function trainModel() {
+  if (person1Poses.length > 10 && person2Poses.length > 10) {
+    // Align datasets to same length
+    const minLen = Math.min(person1Poses.length, person2Poses.length);
+    const trainingData: tfHelper.PoseDatum[] = [];
+    const trainingData2: tfHelper.PoseDatum[] = [];
+
+    for (let i = 0; i < minLen; i++) {
+      trainingData.push({
+        person1Pose: person1Poses[i],
+        person2Pose: person2Poses[i],
+      });
+
+      trainingData2.push({
+        person1Pose: person2Poses[i],
+        person2Pose: person1Poses[i],
+      });
+    }
 
     if (trainBodyButton) {
-      trainBodyButton.innerText = "RECORDING PERSON 1...";
-      trainBodyButton.disabled = true;
+      trainBodyButton.innerText = "TRAINING MODEL...";
     }
-    uiHelper.startCountdown(trainingDuration);
 
-    setTimeout(() => {
-      mlMode = MLMode.IDLE;
+    let result: any = await tfHelper.run(trainingData);
+    myModel = result.model;
+    myNormalizations = result.tensorData;
+
+    let result2: any = await tfHelper.run(trainingData2);
+    myModel2 = result2.model;
+    myNormalizations2 = result2.tensorData;
+  } else {
+    alert("Not enough training data collected. Please try again.");
+  }
+  if (trainBodyButton) {
+    trainBodyButton.innerText = "RETRAIN MODEL";
+    trainBodyButton.disabled = false;
+  }
+}
+
+// Toggles recordingPhase and MLMode
+function recordBodies() {
+  // Phase 1: Record Person 1
+  if (person1Poses.length === 0) {
+    if (numberOfPlayers === 2) {
+      mlMode = MLMode.TRAINING;
+      recordingPhase = "both";
+      person1Poses = [];
+      person2Poses = [];
 
       if (trainBodyButton) {
-        trainBodyButton.innerText = "RECORD PERSON 2";
-        trainBodyButton.disabled = false;
+        trainBodyButton.innerText = "RECORDING BOTH...";
+        trainBodyButton.disabled = true;
       }
 
-      console.log(`Person 1: Collected ${person1Poses.length} poses`);
-    }, trainingDuration * 1000);
+      uiHelper.startCountdown(trainingDuration);
+
+      setTimeout(async () => {
+        // TODO: Can I make this a function, to not repeat myself twice?
+        // But it does something different...
+        mlMode = MLMode.IDLE;
+        recordingPhase = "idle";
+
+        console.log(`Person 1: Collected ${person1Poses.length} poses`);
+        console.log(`Person 2: Collected ${person2Poses.length} poses`);
+
+        trainModel();
+      }, trainingDuration * 1000);
+    } else {
+      recordingPhase = "person1";
+      mlMode = MLMode.TRAINING;
+      person1Poses = [];
+
+      if (trainBodyButton) {
+        trainBodyButton.innerText = "RECORDING PERSON 1...";
+        trainBodyButton.disabled = true;
+      }
+      uiHelper.startCountdown(trainingDuration);
+
+      setTimeout(() => {
+        mlMode = MLMode.IDLE;
+
+        if (trainBodyButton) {
+          trainBodyButton.innerText = "RECORD PERSON 2";
+          trainBodyButton.disabled = false;
+        }
+
+        console.log(`Person 1: Collected ${person1Poses.length} poses`);
+      }, trainingDuration * 1000);
+    }
   }
   // Phase 2: Record Person 2 and train model
   else if (person1Poses.length > 0 && person2Poses.length === 0) {
@@ -236,43 +380,12 @@ function trainBody() {
     uiHelper.startCountdown(trainingDuration);
 
     setTimeout(async () => {
-      // TODO: Can I make this a function, to not repeat myself twice?
       mlMode = MLMode.IDLE;
       recordingPhase = "idle";
 
       console.log(`Person 2: Collected ${person2Poses.length} poses`);
 
-      if (person1Poses.length > 10 && person2Poses.length > 10) {
-        // Align datasets to same length
-        const minLen = Math.min(person1Poses.length, person2Poses.length);
-        const trainingData: tfHelper.PoseDatum[] = [];
-
-        for (let i = 0; i < minLen; i++) {
-          trainingData.push({
-            person1Pose: person1Poses[i],
-            person2Pose: person2Poses[i],
-          });
-        }
-
-        if (trainBodyButton) {
-          trainBodyButton.innerText = "TRAINING MODEL...";
-        }
-
-        let result: any = await tfHelper.run(trainingData);
-        myModel = result.model;
-        myNormalizations = result.tensorData;
-
-        if (trainBodyButton) {
-          trainBodyButton.innerText = "RETRAIN MODEL";
-          trainBodyButton.disabled = false;
-        }
-      } else {
-        if (trainBodyButton) {
-          trainBodyButton.innerText = "RETRAIN MODEL";
-          trainBodyButton.disabled = false;
-        }
-        alert("Not enough training data collected. Please try again.");
-      }
+      trainModel();
     }, trainingDuration * 1000);
   }
   // Reset: Start over
@@ -281,8 +394,11 @@ function trainBody() {
     person2Poses = [];
     myModel = null;
     myNormalizations = null;
+    myModel2 = null;
+    myNormalizations2 = null;
 
     if (trainBodyButton) {
+      // TODO: Adjust for 2 person mode
       trainBodyButton.innerText = "RECORD PERSON 1";
     }
     alert("Reset! Click button to record Person 1 again.");
@@ -292,7 +408,7 @@ function trainBody() {
 // User clicks "Dance with AI button" once the AI has finished training.
 // Show a dancing skeleton that reacts to user's movement.
 function dance() {
-  if (!myModel) {
+  if (!myModel && !myModel2) {
     alert("Please train the model first!");
     return;
   }
@@ -332,61 +448,13 @@ scene.add(directionalLight);
 scene.add(directionalLight.target);
 
 // Metaballs for joints
-// For now, this will reflect the LIVE body. Can generalize later for recorded + ML bodies
 const skeletonMetaballs = threeHelper.createSkeletonMetaballs(RAPIER, world);
 scene.add(skeletonMetaballs);
-
-// Create skeleton visualization for predicted pose
-const skeletonGroup = new THREE.Group();
-scene.add(skeletonGroup);
-
-// Update skeleton
-// Doesn't work if I move this into a separate file
-// TODO: This needs to pass in which skeletonGroup
-function updateSkeleton(pose: number[]) {
-  if (pose.length !== 66) return;
-
-  // Update joint positions
-  for (let i = 0; i < 33; i++) {
-    const joint = skeletonGroup.getObjectByName(`joint_${i}`);
-    if (joint) {
-      // Convert normalized coords (0-1) to 3D space (-50 to 50)
-      const x = (pose[i * 2] - 0.5) * 100;
-      const y = (0.5 - pose[i * 2 + 1]) * 100; // Flip Y
-      joint.position.set(x, y, 0);
-    }
-  }
-
-  // Update connection lines
-  for (const [start, end] of mediaPipeHelper.POSE_CONNECTIONS) {
-    const line = skeletonGroup.getObjectByName(
-      `connection_${start}_${end}`
-    ) as THREE.Line;
-    if (line) {
-      const startJoint = skeletonGroup.getObjectByName(`joint_${start}`);
-      const endJoint = skeletonGroup.getObjectByName(`joint_${end}`);
-
-      if (startJoint && endJoint) {
-        const positions = line.geometry.attributes.position
-          .array as Float32Array;
-        positions[0] = startJoint.position.x;
-        positions[1] = startJoint.position.y;
-        positions[2] = startJoint.position.z;
-        positions[3] = endJoint.position.x;
-        positions[4] = endJoint.position.y;
-        positions[5] = endJoint.position.z;
-        line.geometry.attributes.position.needsUpdate = true;
-      }
-    }
-  }
-}
-
-// Initialize skeleton
-threeHelper.createSkeletonVisualization(skeletonGroup);
 
 // Animate scene with Three.js
 function animate() {
   // Update predicted skeleton
+  // When person 2 is dancing in recording phase 2, show replay of person 1
   if (recordingPhase === "person2" && person1Poses.length > 0) {
     if (playbackStartTime === 0) {
       playbackStartTime = performance.now();
@@ -396,17 +464,16 @@ function animate() {
     const frameIndex = Math.floor(progress * person1Poses.length);
 
     if (frameIndex < person1Poses.length) {
-      updateSkeleton(person1Poses[frameIndex]);
-      skeletonGroup.visible = true;
-    } else {
-      // Playback finished, but we wait for the recording to finish
-      skeletonGroup.visible = false;
+      // Add person1Poses to currentPoses
+      currentPoses.push(tfHelper.unflattenPose(person1Poses[frameIndex]));
     }
-  } else if (predictedPose.length === 66 && mlMode === MLMode.PREDICTING) {
-    updateSkeleton(predictedPose);
-    skeletonGroup.visible = true;
-  } else {
-    skeletonGroup.visible = false;
+  } else if (mlMode === MLMode.PREDICTING) {
+    if (predictedPose.length === 66) {
+      currentPoses.push(tfHelper.unflattenPose(predictedPose));
+    }
+    if (predictedPose2.length === 66) {
+      currentPoses.push(tfHelper.unflattenPose(predictedPose2));
+    }
   }
 
   if (recordingPhase !== "person2" && playbackStartTime !== 0) {
@@ -414,6 +481,8 @@ function animate() {
   }
 
   // Metaballs
+  console.log("current poses: ", currentPoses);
+  skeletonMetaballs.userData.update(currentPoses);
   world.step();
 
   renderer.render(scene, camera);
