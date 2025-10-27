@@ -41,7 +41,7 @@ function addBallWithPositionAndSize(
     0,
     strength,
     6, // subtract = lightness
-    new THREE.Color().setRGB(Math.random(), Math.random(), Math.random()) // TODO: This color doesn't work
+    new THREE.Color().setRGB(0, 1, 1) // This depends on the body... needs to pass it in
   );
 }
 
@@ -85,8 +85,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         >
       | undefined;
     rigid: any;
-    update: () => THREE.Vector3;
-    name: string;
+    update?: () => THREE.Vector3;
+    name?: string;
   }[] = [];
   for (let i = 0; i < numSkeletonBodies; i++) {
     const body = getJoint({ debug: true, RAPIER, world, xPos: 0, yPos: 0 });
@@ -94,11 +94,13 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
   }
 
   const normalMat = new THREE.MeshNormalMaterial();
-  //const matcapMat = new THREE.MeshMatcapMaterial();
+  const matcapMat = new THREE.MeshMatcapMaterial({
+    vertexColors: true,
+  });
   //matcapMat.color = new THREE.Color().setHex(0x4deeea);
   const skeletonMetaballs = new MarchingCubes(
     96, // resolution of metaball,
-    normalMat,
+    matcapMat,
     true, // enableUVs
     true, // enableColors
     90000 // max poly count
