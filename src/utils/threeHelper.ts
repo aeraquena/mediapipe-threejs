@@ -1,14 +1,14 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { JOINTS, POSE_CONNECTIONS } from "./mediaPipeHelper";
+import { JOINTS } from "./mediaPipeHelper";
 import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
 import { getJoint } from "./getBody";
 
 const bodyColors: THREE.Color[] = [
-  new THREE.Color().setHex(0x4deeea), // cyan
-  new THREE.Color().setHex(0xfd4131), // red
-  new THREE.Color().setHex(0x74ee15), // lime green
-  new THREE.Color().setHex(0xf000ff), // magenta
+  new THREE.Color().setHex(0x44aeb3), // cyan
+  new THREE.Color().setHex(0xf01c9c), // hot pink
+  new THREE.Color().setHex(0x0000ff), // blue
+  new THREE.Color().setHex(0xff0000), // red
 ];
 
 export const addCamera = (): THREE.PerspectiveCamera => {
@@ -42,13 +42,20 @@ function addBallWithPositionAndSize(
   bodyIndex: number,
   skeletonMetaballs: MarchingCubes
 ) {
+  let newXPos = 1 - xPos;
+  if (bodyIndex === 2) {
+    newXPos = 1 - xPos + 0.2; // to the right
+  } else if (bodyIndex === 3) {
+    newXPos = 1 - xPos - 0.2; // to the left
+  }
+
   // if index is 2 or 3, displace it a little up
   skeletonMetaballs.addBall(
-    bodyIndex < 2 ? 1 - xPos + 0.3 : 1 - xPos + 0.3, // Subtracts pos from 1 to flip orientation
-    bodyIndex < 2 ? 1 - yPos + 0.2 : 1 - yPos + 0.2, // Subtracts pos from 1 to flip orientation
-    bodyIndex < 2 ? 0.1 : 0, // bodyIndex < 2 ? 0 : 1, // positions AI bodies behind human bodies. TO DO: If z is 1, not visible
+    newXPos, // Subtracts pos from 1 to flip orientation
+    bodyIndex < 2 ? 1 - yPos : 1 - yPos + 0.2, // Subtracts pos from 1 to flip orientation
+    bodyIndex < 2 ? 0.2 : 0, // bodyIndex < 2 ? 0 : 1, // positions AI bodies behind human bodies. TO DO: If z is 1, not visible
     strength,
-    6, // subtract = lightness
+    6,
     bodyColors[bodyIndex % bodyColors.length]
   );
 }
