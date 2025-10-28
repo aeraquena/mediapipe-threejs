@@ -42,10 +42,11 @@ function addBallWithPositionAndSize(
   bodyIndex: number,
   skeletonMetaballs: MarchingCubes
 ) {
+  // if index is 2 or 3, displace it a little up
   skeletonMetaballs.addBall(
-    1 - xPos, // Subtracts pos from 1 to flip orientation
-    1 - yPos, // Subtracts pos from 1 to flip orientation
-    0, // bodyIndex < 2 ? 0 : 1, // positions AI bodies behind human bodies. TO DO: If z is 1, not visible
+    bodyIndex < 2 ? 1 - xPos + 0.3 : 1 - xPos + 0.3, // Subtracts pos from 1 to flip orientation
+    bodyIndex < 2 ? 1 - yPos + 0.2 : 1 - yPos + 0.2, // Subtracts pos from 1 to flip orientation
+    bodyIndex < 2 ? 0.1 : 0, // bodyIndex < 2 ? 0 : 1, // positions AI bodies behind human bodies. TO DO: If z is 1, not visible
     strength,
     6, // subtract = lightness
     bodyColors[bodyIndex % bodyColors.length]
@@ -129,7 +130,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         // scale -1...0 to 1...0
         //const zPosScaled = scaleValue(zPos, -1, 0, 1, 0);
 
-        const strength = 0.08; // * zPosScaled; // size
+        const strength = 0.05; // * zPosScaled; // size
 
         skeletonBodies.forEach((b, i) => {
           // Skip all head landmarks, foot index, and hands
