@@ -432,7 +432,7 @@ camera.position.set(0, 0, 10);
 camera.lookAt(0, 0, 0);
 
 // Add orbit controls
-//threeHelper.addOrbitControls(camera, renderer.domElement);
+threeHelper.addOrbitControls(camera, renderer.domElement);
 
 const scene: THREE.Scene = new THREE.Scene();
 

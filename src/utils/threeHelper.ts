@@ -6,9 +6,9 @@ import { getJoint } from "./getBody";
 
 const bodyColors: THREE.Color[] = [
   new THREE.Color().setHex(0x4deeea), // cyan
-  new THREE.Color().setHex(0xf000ff), // magenta
+  new THREE.Color().setHex(0xfd4131), // red
   new THREE.Color().setHex(0x74ee15), // lime green
-  new THREE.Color().setHex(0xffe700), // yellow
+  new THREE.Color().setHex(0xf000ff), // magenta
 ];
 
 export const addCamera = (): THREE.PerspectiveCamera => {
@@ -45,7 +45,7 @@ function addBallWithPositionAndSize(
   skeletonMetaballs.addBall(
     1 - xPos, // Subtracts pos from 1 to flip orientation
     1 - yPos, // Subtracts pos from 1 to flip orientation
-    0,
+    0, // bodyIndex < 2 ? 0 : 1, // positions AI bodies behind human bodies. TO DO: If z is 1, not visible
     strength,
     6, // subtract = lightness
     bodyColors[bodyIndex % bodyColors.length]
