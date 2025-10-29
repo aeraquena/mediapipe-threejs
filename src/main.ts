@@ -35,12 +35,7 @@ trainBodyButton = document.getElementById(
   "trainBodyButton"
 ) as HTMLButtonElement | null;
 
-trainBodyButton?.addEventListener("click", () => {
-  uiHelper.startCountdown(countdownDuration);
-  setTimeout(() => {
-    recordBodies();
-  }, countdownDuration * 1000);
-});
+trainBodyButton?.addEventListener("click", countdownToRecord);
 
 /**************************
  * MediaPipe declarations *
@@ -98,6 +93,13 @@ let numberOfPlayers: number;
 /****************
  * UI functions *
  ****************/
+
+function countdownToRecord() {
+  uiHelper.startCountdown(countdownDuration);
+  setTimeout(() => {
+    recordBodies();
+  }, countdownDuration * 1000);
+}
 
 function updateTrainBodyButton() {
   if (trainBodyButton) {
@@ -331,6 +333,7 @@ async function trainModel() {
 function recordBodies() {
   // Phase 1: Record Person 1
   if (person1Poses.length === 0) {
+    // Record 2 people
     if (numberOfPlayers === 2) {
       mlMode = MLMode.TRAINING;
       recordingPhase = "both";
@@ -369,10 +372,15 @@ function recordBodies() {
       setTimeout(() => {
         mlMode = MLMode.IDLE;
 
+        // TODO: Just run train body again
+
         if (trainBodyButton) {
-          trainBodyButton.innerText = "RECORD PERSON 2";
+          //trainBodyButton.innerText = "RECORD PERSON 2";
           trainBodyButton.disabled = false;
         }
+
+        // Record Person 2 automatically
+        countdownToRecord();
 
         console.log(`Person 1: Collected ${person1Poses.length} poses`);
       }, trainingDuration * 1000);
