@@ -6,6 +6,7 @@ import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 import * as tfHelper from "./utils/tfHelper";
 import * as uiHelper from "./utils/uiHelper";
 import RAPIER from "@dimforge/rapier3d-compat";
+import { update } from "three/examples/jsm/libs/tween.module.js";
 
 /***************
  * UI Elements *
@@ -101,6 +102,20 @@ let currentPoses: NormalizedLandmark[][] = [];
 
 let numberOfPlayers: number;
 
+/****************
+ * UI functions *
+ ****************/
+
+function updateTrainBodyButton() {
+  if (trainBodyButton) {
+    if (numberOfPlayers === 2) {
+      trainBodyButton.innerText = "RECORD 2 PEOPLE";
+    } else {
+      trainBodyButton.innerText = "RECORD 1 PERSON";
+    }
+  }
+}
+
 /***********************************************************************
 // MediaPipe: Continuously grab image from webcam stream and detect it.
 ************************************************************************/
@@ -174,7 +189,8 @@ async function predictWebcam() {
       // Training: record poses separately for each person
       if (mlMode === MLMode.TRAINING) {
         if (
-          numberOfPlayers === 2 && // recordingPhase === 'both'
+          numberOfPlayers === 2 &&
+          //recordingPhase === "both" &&
           result.landmarks[0] &&
           result.landmarks[1]
         ) {
@@ -228,7 +244,7 @@ async function predictWebcam() {
       if (mlMode !== MLMode.TRAINING) {
         // Update number of players
         numberOfPlayers = result.landmarks.length;
-        console.log("number of players: ", numberOfPlayers);
+        updateTrainBodyButton();
       }
 
       // Clear current poses
@@ -397,10 +413,6 @@ function recordBodies() {
     myModel2 = null;
     myNormalizations2 = null;
 
-    if (trainBodyButton) {
-      // TODO: Adjust for 2 person mode
-      trainBodyButton.innerText = "RECORD PERSON 1";
-    }
     alert("Reset! Click button to record Person 1 again.");
   }
 }
