@@ -15,7 +15,6 @@ import { update } from "three/examples/jsm/libs/tween.module.js";
 let enableWebcamButton: HTMLButtonElement | null = null;
 let videoToggleButton: HTMLButtonElement | null = null;
 let trainBodyButton: HTMLButtonElement | null = null;
-let danceButton: HTMLButtonElement | null = null;
 
 const video = document.getElementById("webcam") as HTMLVideoElement;
 const canvasElement = document.getElementById(
@@ -42,12 +41,6 @@ trainBodyButton?.addEventListener("click", () => {
     recordBodies();
   }, countdownDuration * 1000);
 });
-
-danceButton = document.getElementById(
-  "danceButton"
-) as HTMLButtonElement | null;
-
-danceButton?.addEventListener("click", dance);
 
 /**************************
  * MediaPipe declarations *
@@ -323,6 +316,8 @@ async function trainModel() {
     let result2: any = await tfHelper.run(trainingData2);
     myModel2 = result2.model;
     myNormalizations2 = result2.tensorData;
+
+    dance();
   } else {
     alert("Not enough training data collected. Please try again.");
   }
@@ -417,7 +412,7 @@ function recordBodies() {
   }
 }
 
-// User clicks "Dance with AI button" once the AI has finished training.
+// Once the AI has finished training,
 // Show a dancing skeleton that reacts to user's movement.
 function dance() {
   if (!myModel && !myModel2) {
@@ -493,7 +488,8 @@ function animate() {
   }
 
   // Metaballs
-  console.log("current poses: ", currentPoses);
+  // Uncomment to print length of current poses
+  //console.log("current poses: ", currentPoses.length);
   skeletonMetaballs.userData.update(currentPoses);
   world.step();
 
