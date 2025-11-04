@@ -86,7 +86,12 @@ let predictedPose2: number[] = []; // 66D predicted pose
 
 // The current pose for all humans, playback, and AI
 // TODO: We only need x, y, not z or visibility
+
+// human poses
 let currentPoses: NormalizedLandmark[][] = [];
+
+// AI poses
+let aiPoses: NormalizedLandmark[][] = [];
 
 let numberOfPlayers: number;
 
@@ -258,6 +263,7 @@ async function predictWebcam() {
           PoseLandmarker.POSE_CONNECTIONS as any
         );
 
+        // push each current body to currentPoses
         currentPoses.push(landmark);
       }
 
@@ -470,6 +476,8 @@ scene.add(skeletonMetaballs);
 function animate() {
   // Update predicted skeleton
   // When person 2 is dancing in recording phase 2, show replay of person 1
+
+  aiPoses = [];
   if (recordingPhase === "person2" && person1Poses.length > 0) {
     if (playbackStartTime === 0) {
       playbackStartTime = performance.now();
@@ -479,15 +487,17 @@ function animate() {
     const frameIndex = Math.floor(progress * person1Poses.length);
 
     if (frameIndex < person1Poses.length) {
-      // Add person1Poses to currentPoses
-      currentPoses.push(tfHelper.unflattenPose(person1Poses[frameIndex]));
+      // Add person1Poses playback to currentPoses
+      aiPoses.push(tfHelper.unflattenPose(person1Poses[frameIndex]));
     }
   } else if (mlMode === MLMode.PREDICTING) {
     if (predictedPose.length === 66) {
-      currentPoses.push(tfHelper.unflattenPose(predictedPose));
+      // predicted pose 1
+      aiPoses.push(tfHelper.unflattenPose(predictedPose));
     }
     if (predictedPose2.length === 66) {
-      currentPoses.push(tfHelper.unflattenPose(predictedPose2));
+      // predicted pose 2
+      aiPoses.push(tfHelper.unflattenPose(predictedPose2));
     }
   }
 
@@ -496,9 +506,8 @@ function animate() {
   }
 
   // Metaballs
-  // Uncomment to print length of current poses
-  //console.log("current poses: ", currentPoses.length);
-  skeletonMetaballs.userData.update(currentPoses);
+  // TODO: Can "flatten" two objects of currentPoses now
+  skeletonMetaballs.userData.update([...currentPoses, ...aiPoses]);
   world.step();
 
   renderer.render(scene, camera);
