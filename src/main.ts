@@ -450,10 +450,10 @@ document.body.appendChild(renderer.domElement);
 
 const camera = threeHelper.addCamera();
 camera.position.set(0, 0, 10);
-camera.lookAt(0, 0, 0);
+//camera.lookAt(0, 0, 0);
 
 // Add orbit controls
-threeHelper.addOrbitControls(camera, renderer.domElement);
+//threeHelper.addOrbitControls(camera, renderer.domElement);
 
 const scene: THREE.Scene = new THREE.Scene();
 
@@ -467,6 +467,12 @@ let world = new RAPIER.World(gravity);
 const directionalLight = threeHelper.addDirectionalLight();
 scene.add(directionalLight);
 scene.add(directionalLight.target);
+
+// Cube for debug
+/*const geometry = new THREE.BoxGeometry(20, 1, 1);
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const cube = new THREE.Mesh(geometry, material);
+scene.add(cube);*/
 
 // Metaballs for joints
 const skeletonMetaballs = threeHelper.createSkeletonMetaballs(RAPIER, world);

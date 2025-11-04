@@ -132,4 +132,5 @@ footer {
 #threeJsCanvas {
   position: absolute;
   margin-top: 100px; /* temporary fix to allow clicking buttons */
+  border: 2px solid #fff;
 }
