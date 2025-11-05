@@ -43,7 +43,7 @@ function addBallWithPositionAndSize(
   skeletonMetaballs: MarchingCubes
 ) {
   // Use FULL 0-1 range, no padding at all
-  let newXPos = 1 - xPos - 0.5; // Direct mapping, no offset
+  let newXPos = 1 - xPos; // Direct mapping, no offset
 
   if (bodyIndex === 2) {
     newXPos = 1 - xPos + 0.2; // shift right
@@ -52,8 +52,8 @@ function addBallWithPositionAndSize(
   }
 
   skeletonMetaballs.addBall(
-    newXPos,
-    bodyIndex < 2 ? 1 - yPos : 1 - yPos + 0.2, // Subtracts pos from 1 to flip orientation
+    newXPos * 0.5 + 0.5,
+    (bodyIndex < 2 ? 1 - yPos : 1 - yPos + 0.2) * 0.5, // Subtracts pos from 1 to flip orientation
     bodyIndex < 2 ? 0.2 : 0,
     strength,
     6,
@@ -136,7 +136,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
   );
 
   // Position to match MarchingCubes coordinate system
-  boxLine.position.set(0, 0, 0); // Center at 0.5,0.5,0.5
+  boxLine.position.set(0, 0, 0);
   boxLine.scale.copy(skeletonMetaballs.scale); // Match the same scale
   console.log("skeleton metaballs scale: ", skeletonMetaballs.scale);
 
@@ -184,7 +184,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallWithPositionAndSize(
           landmarks[j][JOINTS.NOSE].x,
           landmarks[j][JOINTS.NOSE].y,
-          15 * strength,
+          7 * strength,
           j,
           skeletonMetaballs
         );
@@ -202,7 +202,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
             landmarks[j][JOINTS.LEFT_HIP],
             landmarks[j][JOINTS.RIGHT_HIP]
           ),
-          10,
+          5,
           6 * strength,
           j,
           skeletonMetaballs
@@ -212,7 +212,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.RIGHT_SHOULDER],
           landmarks[j][JOINTS.RIGHT_ELBOW],
-          10,
+          5,
           strength,
           j,
           skeletonMetaballs
@@ -222,7 +222,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.LEFT_SHOULDER],
           landmarks[j][JOINTS.LEFT_ELBOW],
-          10,
+          5,
           strength,
           j,
           skeletonMetaballs
@@ -232,7 +232,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.RIGHT_ELBOW],
           landmarks[j][JOINTS.RIGHT_WRIST],
-          10,
+          5,
           strength,
           j,
           skeletonMetaballs
@@ -242,7 +242,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.LEFT_ELBOW],
           landmarks[j][JOINTS.LEFT_WRIST],
-          10,
+          5,
           strength,
           j,
           skeletonMetaballs
@@ -252,7 +252,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.RIGHT_HIP],
           landmarks[j][JOINTS.RIGHT_KNEE],
-          12,
+          6,
           strength,
           j,
           skeletonMetaballs
@@ -262,7 +262,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.RIGHT_KNEE],
           landmarks[j][JOINTS.RIGHT_ANKLE],
-          12,
+          6,
           strength,
           j,
           skeletonMetaballs
@@ -272,7 +272,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.LEFT_HIP],
           landmarks[j][JOINTS.LEFT_KNEE],
-          12,
+          6,
           strength,
           j,
           skeletonMetaballs
@@ -282,7 +282,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.LEFT_KNEE],
           landmarks[j][JOINTS.LEFT_ANKLE],
-          12,
+          6,
           strength,
           j,
           skeletonMetaballs

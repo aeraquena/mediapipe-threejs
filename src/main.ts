@@ -449,8 +449,7 @@ renderer.domElement.id = "threeJsCanvas";
 document.body.appendChild(renderer.domElement);
 
 const camera = threeHelper.addCamera();
-camera.position.set(0, 0, 10);
-//camera.lookAt(0, 0, 0);
+camera.position.set(0, 0, 1.5);
 
 // Add orbit controls
 threeHelper.addOrbitControls(camera, renderer.domElement);
@@ -474,15 +473,19 @@ const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);*/
 
+// Add grid
+const size = 2;
+const divisions = 20;
+const gridHelper = new THREE.GridHelper(size, divisions);
+
+// Rotate the grid 90 degrees (Math.PI / 2 radians) around the X-axis
+gridHelper.rotation.x = Math.PI / 2;
+
+scene.add(gridHelper);
+
 // Metaballs for joints
 const skeletonMetaballs = threeHelper.createSkeletonMetaballs(RAPIER, world);
 scene.add(skeletonMetaballs);
-
-// Add grid
-/*const size = 100;
-const divisions = 100;
-const gridHelper = new THREE.GridHelper(size, divisions);
-scene.add(gridHelper);*/
 
 // Animate scene with Three.js
 function animate() {
