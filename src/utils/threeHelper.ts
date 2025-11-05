@@ -42,19 +42,18 @@ function addBallWithPositionAndSize(
   bodyIndex: number,
   skeletonMetaballs: MarchingCubes
 ) {
-  // Use FULL 0-1 range, no padding at all
-  let newXPos = 1 - xPos; // Direct mapping, no offset
+  const scale = 0.5;
+  // X positions for each dancer
+  // Person 1, Person 2, AI 1, AI 2
+  const xPositions = [-0.5, -0.5, -1, 0];
 
-  if (bodyIndex === 2) {
-    newXPos = 1 - xPos + 0.2; // shift right
-  } else if (bodyIndex === 3) {
-    newXPos = 1 - xPos - 0.2; // shift left
-  }
+  // Use FULL 0-1 range, no padding at all
+  let newXPos = 1 - xPos + xPositions[bodyIndex]; // Direct mapping, no offset
 
   skeletonMetaballs.addBall(
-    newXPos * 0.5 + 0.5,
-    (bodyIndex < 2 ? 1 - yPos : 1 - yPos + 0.2) * 0.5, // Subtracts pos from 1 to flip orientation
-    bodyIndex < 2 ? 0.2 : 0,
+    newXPos * scale + 0.5,
+    (1 - yPos) * scale, // Subtracts pos from 1 to flip orientation
+    0,
     strength,
     6,
     bodyColors[bodyIndex % bodyColors.length]
