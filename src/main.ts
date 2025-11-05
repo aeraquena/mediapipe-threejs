@@ -449,7 +449,7 @@ renderer.domElement.id = "threeJsCanvas";
 document.body.appendChild(renderer.domElement);
 
 const camera = threeHelper.addCamera();
-camera.position.set(0, -0.6, 1.3);
+camera.position.set(0, -0.25, 1);
 
 // Add orbit controls
 //threeHelper.addOrbitControls(camera, renderer.domElement);
@@ -474,11 +474,12 @@ const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);*/
 
 // Add grid
-const size = 2;
+const size = 1.125;
 const divisions = 20;
 const gridHelper = new THREE.GridHelper(size, divisions);
 // Rotate the grid 90 degrees (Math.PI / 2 radians) around the X-axis
 gridHelper.rotation.x = Math.PI / 2;
+gridHelper.position.y = -0.125;
 
 scene.add(gridHelper);
 

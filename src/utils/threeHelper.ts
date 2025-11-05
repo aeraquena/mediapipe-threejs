@@ -45,13 +45,16 @@ function addBallWithPositionAndSize(
   const scale = 0.5;
   // X positions for each dancer
   // Person 1, Person 2, AI 1, AI 2
-  const xPositions = [-0.5, -0.5, -1, 0];
+  //const xPositions = [0.6, 0.6, -0.2, 1.2];
+
+  // For 1 person:
+  const xPositions = [0.6, -0.2, 1.2];
 
   // Use FULL 0-1 range, no padding at all
-  let newXPos = 1 - xPos + xPositions[bodyIndex]; // Direct mapping, no offset
+  let newXPos = 1 - xPos + xPositions[bodyIndex];
 
   skeletonMetaballs.addBall(
-    newXPos * scale + 0.5,
+    newXPos * scale,
     (1 - yPos) * scale, // Subtracts pos from 1 to flip orientation
     0,
     strength,
@@ -127,7 +130,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
   skeletonMetaballs.scale.setScalar(1);
 
   // Add bounding box wireframe
-  const boxGeometry = new THREE.BoxGeometry(2, 2, 0); // Unit cube (0-1 range internally)
+  /*const boxGeometry = new THREE.BoxGeometry(2, 2, 0); // Unit cube (0-1 range internally)
   const boxEdges = new THREE.EdgesGeometry(boxGeometry);
   const boxLine = new THREE.LineSegments(
     boxEdges,
@@ -140,6 +143,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
   console.log("skeleton metaballs scale: ", skeletonMetaballs.scale);
 
   skeletonMetaballs.add(boxLine); // Add as child so it moves with metaballs
+  */
 
   skeletonMetaballs.isolation = 750; // blobbiness or size. smaller number = bigger
   skeletonMetaballs.userData = {
