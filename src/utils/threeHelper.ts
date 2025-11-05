@@ -42,18 +42,19 @@ function addBallWithPositionAndSize(
   bodyIndex: number,
   skeletonMetaballs: MarchingCubes
 ) {
-  let newXPos = 1 - xPos;
+  // Use FULL 0-1 range, no padding at all
+  let newXPos = 1 - xPos - 0.5; // Direct mapping, no offset
+
   if (bodyIndex === 2) {
-    newXPos = 1 - xPos + 0.2; // to the right
+    newXPos = 1 - xPos + 0.2; // shift right
   } else if (bodyIndex === 3) {
-    newXPos = 1 - xPos - 0.2; // to the left
+    newXPos = 1 - xPos - 0.2; // shift left
   }
 
-  // if index is 2 or 3, displace it a little up
   skeletonMetaballs.addBall(
-    newXPos, // Subtracts pos from 1 to flip orientation
+    newXPos,
     bodyIndex < 2 ? 1 - yPos : 1 - yPos + 0.2, // Subtracts pos from 1 to flip orientation
-    bodyIndex < 2 ? 0.2 : 0, // bodyIndex < 2 ? 0 : 1, // positions AI bodies behind human bodies. TO DO: If z is 1, not visible
+    bodyIndex < 2 ? 0.2 : 0,
     strength,
     6,
     bodyColors[bodyIndex % bodyColors.length]
@@ -122,7 +123,25 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
     true, // enableColors
     90000 // max poly count
   );
-  skeletonMetaballs.scale.setScalar(5); // entire metaball system
+
+  // Expand the bounding box to cover more space
+  skeletonMetaballs.scale.setScalar(1);
+
+  // Add bounding box wireframe
+  const boxGeometry = new THREE.BoxGeometry(2, 2, 0); // Unit cube (0-1 range internally)
+  const boxEdges = new THREE.EdgesGeometry(boxGeometry);
+  const boxLine = new THREE.LineSegments(
+    boxEdges,
+    new THREE.LineBasicMaterial({ color: 0xff0000 }) // Red border
+  );
+
+  // Position to match MarchingCubes coordinate system
+  boxLine.position.set(0, 0, 0); // Center at 0.5,0.5,0.5
+  boxLine.scale.copy(skeletonMetaballs.scale); // Match the same scale
+  console.log("skeleton metaballs scale: ", skeletonMetaballs.scale);
+
+  skeletonMetaballs.add(boxLine); // Add as child so it moves with metaballs
+
   skeletonMetaballs.isolation = 750; // blobbiness or size. smaller number = bigger
   skeletonMetaballs.userData = {
     // landmarks = currentPoses
