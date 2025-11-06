@@ -7,6 +7,7 @@ import * as tfHelper from "./utils/tfHelper";
 import * as uiHelper from "./utils/uiHelper";
 import RAPIER from "@dimforge/rapier3d-compat";
 import { update } from "three/examples/jsm/libs/tween.module.js";
+import { setupSerialConnection } from "simple-web-serial";
 
 /***************
  * UI Elements *
@@ -95,6 +96,19 @@ let aiPoses: NormalizedLandmark[][] = [];
 
 let numberOfPlayers: number;
 
+/************************
+ * Arduino declarations *
+ ************************/
+
+const connection = setupSerialConnection({
+  baudRate: 57600,
+  requestAccessOnPageLoad: true,
+});
+console.log("send arduino");
+connection.on("event-from-arduino", function (data) {
+  console.log(data);
+});
+
 /****************
  * UI functions *
  ****************/
@@ -148,6 +162,12 @@ function enableCam(_event?: Event): void {
     if (enableWebcamButton) enableWebcamButton.innerText = "ENABLE WEBCAM";
   } else {
     webcamRunning = true;
+
+    connection.startConnection();
+    connection.send("event-to-arduino", { string: "Hello there, Arduino" });
+
+    console.log(connection);
+
     if (enableWebcamButton) enableWebcamButton.innerText = "DISABLE WEBCAM";
   }
 
@@ -283,6 +303,10 @@ async function predictWebcam() {
 function toggleVideo() {
   if (video.style.display === "none" || video.style.display === "") {
     video.style.display = "block"; // Show the element
+
+    connection.send("event-to-arduino", { string: "Hello there, Arduino" });
+
+    console.log(connection);
     if (videoToggleButton) {
       videoToggleButton.innerText = "VIDEO OFF";
     }
