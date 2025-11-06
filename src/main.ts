@@ -104,8 +104,9 @@ const connection = setupSerialConnection({
   baudRate: 57600,
   requestAccessOnPageLoad: true,
 });
-console.log("send arduino");
+
 connection.on("event-from-arduino", function (data) {
+  console.log("event from arduino:");
   console.log(data);
 });
 
@@ -304,7 +305,8 @@ function toggleVideo() {
   if (video.style.display === "none" || video.style.display === "") {
     video.style.display = "block"; // Show the element
 
-    connection.send("event-to-arduino", { string: "Hello there, Arduino" });
+    //connection.send("event-to-arduino", { string: "Hello there, Arduino" });
+    connection.send("event-with-number", Math.floor(Math.random() * 360));
 
     console.log(connection);
     if (videoToggleButton) {
@@ -320,6 +322,7 @@ function toggleVideo() {
 
 async function trainModel() {
   if (person1Poses.length > 10 && person2Poses.length > 10) {
+    console.log(person1Poses.map((pose) => tfHelper.unflattenPose(pose)));
     // Align datasets to same length
     const minLen = Math.min(person1Poses.length, person2Poses.length);
     const trainingData: tfHelper.PoseDatum[] = [];
