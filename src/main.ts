@@ -113,6 +113,38 @@ connection.on("event-from-arduino", function (data) {
 
 let currentAngle = 0;
 
+// Using the Web Serial API (for browsers)
+async function readSerialData() {
+  try {
+    // Request a port
+    const port = await navigator.serial.requestPort();
+
+    // Open the port with desired baud rate
+    await port.open({ baudRate: 9600 });
+
+    console.log("Serial port opened");
+
+    // Read data
+    const reader = port.readable.getReader();
+
+    while (true) {
+      const { value, done } = await reader.read();
+
+      if (done) {
+        console.log("Serial port closed");
+        reader.releaseLock();
+        break;
+      }
+
+      // Convert Uint8Array to string
+      const text = new TextDecoder().decode(value);
+      console.log("Received:", text);
+    }
+  } catch (error) {
+    console.error("Serial port error:", error);
+  }
+}
+
 /****************
  * UI functions *
  ****************/
@@ -168,9 +200,13 @@ function enableCam(_event?: Event): void {
     webcamRunning = true;
 
     connection.startConnection();
-    connection.send("event-to-arduino", { string: "Hello there, Arduino" });
+    console.log("started connection:");
+    //connection.send("event-to-arduino", { string: "Hello there, Arduino" });
 
     console.log(connection);
+
+    // Call the function
+    readSerialData();
 
     if (enableWebcamButton) enableWebcamButton.innerText = "DISABLE WEBCAM";
   }
