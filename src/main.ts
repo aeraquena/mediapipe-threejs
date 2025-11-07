@@ -5,6 +5,7 @@ import * as threeHelper from "./utils/threeHelper";
 import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 import * as tfHelper from "./utils/tfHelper";
 import * as uiHelper from "./utils/uiHelper";
+import { calculateAngle } from "./utils/math";
 import RAPIER from "@dimforge/rapier3d-compat";
 import { update } from "three/examples/jsm/libs/tween.module.js";
 import { setupSerialConnection } from "simple-web-serial";
@@ -109,6 +110,8 @@ connection.on("event-from-arduino", function (data) {
   console.log("event from arduino:");
   console.log(data);
 });
+
+let currentAngle = 0;
 
 /****************
  * UI functions *
@@ -288,6 +291,19 @@ async function predictWebcam() {
         currentPoses.push(landmark);
       }
 
+      // Send angle of arm to Arduino
+      if (result.landmarks[0]) {
+        const angle = Math.floor(
+          calculateAngle(
+            result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_SHOULDER],
+            result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_ELBOW],
+            result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_WRIST]
+          )
+        );
+        currentAngle = angle;
+        //connection.send("event-with-number", angle);
+      }
+
       canvasCtx.restore();
     });
   }
@@ -296,6 +312,14 @@ async function predictWebcam() {
     window.requestAnimationFrame(predictWebcam as FrameRequestCallback);
   }
 }
+
+// Interval to send to Arduino
+const interval = setInterval(function () {
+  connection.send("event-with-number", currentAngle);
+  console.log(currentAngle);
+}, 1000);
+
+//clearInterval(interval); // thanks @Luca D'Amico
 
 /******************
  * AI Training UI *
