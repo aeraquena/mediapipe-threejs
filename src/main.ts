@@ -35,13 +35,7 @@ trainBodyButton = document.getElementById(
   "trainBodyButton"
 ) as HTMLButtonElement | null;
 
-trainBodyButton?.addEventListener("click", () => {
-  if (mlMode !== MLMode.PREDICTING) {
-    countdownToRecord();
-  } else {
-    recordBodies(); // Reset. TODO: Name this better
-  }
-});
+trainBodyButton?.addEventListener("click", countdownToRecord);
 
 /**************************
  * MediaPipe declarations *
@@ -105,11 +99,19 @@ let numberOfPlayers: number;
  * UI functions *
  ****************/
 
+// Elapsed time that hand(s) are raised
+let raiseHandCountdown = 0;
+const RAISE_HAND_TIME = 50;
+
 function countdownToRecord() {
-  uiHelper.startCountdown(countdownDuration);
-  setTimeout(() => {
+  if (mlMode !== MLMode.PREDICTING) {
+    uiHelper.startCountdown(countdownDuration);
+    setTimeout(() => {
+      recordBodies();
+    }, countdownDuration * 1000);
+  } else {
     recordBodies();
-  }, countdownDuration * 1000);
+  }
 }
 
 function updateTrainBodyButton() {
@@ -177,6 +179,7 @@ function enableCam(_event?: Event): void {
 
 let lastVideoTime = -1;
 
+// Process each video frame and create pose landmarker
 async function predictWebcam() {
   // Sets the canvas element and video height and width on every frame
   // Does the small size improve MediaPipe performance?
@@ -248,6 +251,25 @@ async function predictWebcam() {
               myNormalizations2
             );
           }
+        }
+      } else if (mlMode === MLMode.IDLE) {
+        // Track raised hand. Y axis is flipped
+        // TODO: If 2 player mode, both people need to raise hands
+        if (
+          result.landmarks[0] &&
+          result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_INDEX].y <
+            result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_EYE].y
+        ) {
+          if (raiseHandCountdown > RAISE_HAND_TIME) {
+            // Train body
+            countdownToRecord();
+            raiseHandCountdown = 0;
+          }
+
+          raiseHandCountdown++;
+          console.log(raiseHandCountdown);
+        } else {
+          raiseHandCountdown = 0;
         }
       }
 
