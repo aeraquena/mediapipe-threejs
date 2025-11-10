@@ -130,7 +130,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
   skeletonMetaballs.scale.setScalar(1);
 
   // Standing or sitting?
-  const standing = false;
+  const standing = true;
 
   skeletonMetaballs.isolation = 800; // blobbiness or size. smaller number = bigger
 

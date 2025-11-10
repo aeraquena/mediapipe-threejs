@@ -35,6 +35,22 @@ trainBodyButton = document.getElementById(
   "trainBodyButton"
 ) as HTMLButtonElement | null;
 
+/*
+const trainBodyProgressBar: HTMLDivElement | null = trainBodyButton
+  ? (trainBodyButton.querySelector(
+      ".progress-bar-fill"
+    ) as HTMLDivElement | null)
+  : null;
+  */
+
+const trainBodyButtonLabel: HTMLDivElement | null = trainBodyButton
+  ? (trainBodyButton.querySelector(".button-label") as HTMLDivElement | null)
+  : null;
+
+const trainBodyProgressBar: HTMLDivElement | null = document.getElementById(
+  "progress-bar-fill"
+) as HTMLDivElement | null;
+
 trainBodyButton?.addEventListener("click", countdownToRecord);
 
 /**************************
@@ -115,14 +131,14 @@ function countdownToRecord() {
 }
 
 function updateTrainBodyButton() {
-  if (trainBodyButton) {
+  if (trainBodyButtonLabel) {
     if (mlMode === MLMode.PREDICTING) {
-      trainBodyButton.innerText = "RETRAIN AI";
+      trainBodyButtonLabel.innerText = "RETRAIN AI";
     } else {
       if (numberOfPlayers === 2) {
-        trainBodyButton.innerText = "RECORD 2 PEOPLE";
+        trainBodyButtonLabel.innerText = "RECORD 2 PEOPLE";
       } else {
-        trainBodyButton.innerText = "RECORD 1 PERSON";
+        trainBodyButtonLabel.innerText = "RECORD 1 PERSON";
       }
     }
   }
@@ -264,12 +280,24 @@ async function predictWebcam() {
             // Train body
             countdownToRecord();
             raiseHandCountdown = 0;
+            if (trainBodyProgressBar) {
+              trainBodyProgressBar.style.width = "0%";
+            }
           }
 
           raiseHandCountdown++;
-          console.log(raiseHandCountdown);
+
+          if (trainBodyProgressBar) {
+            trainBodyProgressBar.style.width = `${
+              (raiseHandCountdown / RAISE_HAND_TIME) * 100 + "%"
+            }`;
+          }
         } else {
           raiseHandCountdown = 0;
+
+          if (trainBodyProgressBar) {
+            trainBodyProgressBar.style.width = "0%";
+          }
         }
       }
 
@@ -345,8 +373,8 @@ async function trainModel() {
       });
     }
 
-    if (trainBodyButton) {
-      trainBodyButton.innerText = "TRAINING MODEL...";
+    if (trainBodyButtonLabel) {
+      trainBodyButtonLabel.innerText = "TRAINING MODEL...";
     }
 
     let result: any = await tfHelper.run(trainingData);
@@ -361,8 +389,8 @@ async function trainModel() {
   } else {
     alert("Not enough training data collected. Please try again.");
   }
-  if (trainBodyButton) {
-    trainBodyButton.innerText = "RETRAIN MODEL";
+  if (trainBodyButtonLabel && trainBodyButton) {
+    trainBodyButtonLabel.innerText = "RETRAIN MODEL";
     trainBodyButton.disabled = false;
   }
 }
@@ -378,8 +406,8 @@ function recordBodies() {
       person1Poses = [];
       person2Poses = [];
 
-      if (trainBodyButton) {
-        trainBodyButton.innerText = "RECORDING BOTH...";
+      if (trainBodyButtonLabel && trainBodyButton) {
+        trainBodyButtonLabel.innerText = "RECORDING BOTH...";
         trainBodyButton.disabled = true;
       }
 
@@ -401,8 +429,8 @@ function recordBodies() {
       mlMode = MLMode.TRAINING;
       person1Poses = [];
 
-      if (trainBodyButton) {
-        trainBodyButton.innerText = "RECORDING PERSON 1...";
+      if (trainBodyButton && trainBodyButtonLabel) {
+        trainBodyButtonLabel.innerText = "RECORDING PERSON 1...";
         trainBodyButton.disabled = true;
       }
       uiHelper.startCountdown(trainingDuration);
@@ -430,8 +458,8 @@ function recordBodies() {
     mlMode = MLMode.TRAINING;
     person2Poses = [];
 
-    if (trainBodyButton) {
-      trainBodyButton.innerText = "RECORDING PERSON 2...";
+    if (trainBodyButton && trainBodyButtonLabel) {
+      trainBodyButtonLabel.innerText = "RECORDING PERSON 2...";
       trainBodyButton.disabled = true;
     }
     uiHelper.startCountdown(trainingDuration);
