@@ -35,7 +35,11 @@ trainBodyButton = document.getElementById(
   "trainBodyButton"
 ) as HTMLButtonElement | null;
 
-trainBodyButton?.addEventListener("click", countdownToRecord);
+trainBodyButton?.addEventListener("click", () => {
+  if (mlMode !== MLMode.PREDICTING) {
+    countdownToRecord();
+  }
+});
 
 /**************************
  * MediaPipe declarations *
@@ -108,10 +112,14 @@ function countdownToRecord() {
 
 function updateTrainBodyButton() {
   if (trainBodyButton) {
-    if (numberOfPlayers === 2) {
-      trainBodyButton.innerText = "RECORD 2 PEOPLE";
+    if (mlMode === MLMode.PREDICTING) {
+      trainBodyButton.innerText = "RETRAIN AI";
     } else {
-      trainBodyButton.innerText = "RECORD 1 PERSON";
+      if (numberOfPlayers === 2) {
+        trainBodyButton.innerText = "RECORD 2 PEOPLE";
+      } else {
+        trainBodyButton.innerText = "RECORD 1 PERSON";
+      }
     }
   }
 }
@@ -415,12 +423,15 @@ function recordBodies() {
   }
   // Reset: Start over
   else {
+    // Reset
     person1Poses = [];
     person2Poses = [];
     myModel = null;
     myNormalizations = null;
     myModel2 = null;
     myNormalizations2 = null;
+
+    mlMode = MLMode.IDLE;
 
     alert("Reset! Click button to record Person 1 again.");
   }
