@@ -121,7 +121,7 @@ const RAISE_HAND_TIME = 50;
 
 function countdownToRecord() {
   if (mlMode !== MLMode.PREDICTING) {
-    uiHelper.startCountdown(countdownDuration);
+    uiHelper.startCountdown(countdownDuration, false);
     setTimeout(() => {
       recordBodies();
     }, countdownDuration * 1000);
@@ -423,7 +423,7 @@ function recordBodies() {
         trainBodyButton.disabled = true;
       }
 
-      uiHelper.startCountdown(trainingDuration);
+      uiHelper.startCountdown(trainingDuration, true);
 
       setTimeout(async () => {
         // TODO: Can I make this a function, to not repeat myself twice?
@@ -445,7 +445,7 @@ function recordBodies() {
         trainBodyButtonLabel.innerText = "RECORDING PERSON 1...";
         trainBodyButton.disabled = true;
       }
-      uiHelper.startCountdown(trainingDuration);
+      uiHelper.startCountdown(trainingDuration, true);
 
       setTimeout(() => {
         mlMode = MLMode.IDLE;
@@ -474,7 +474,7 @@ function recordBodies() {
       trainBodyButtonLabel.innerText = "RECORDING PERSON 2...";
       trainBodyButton.disabled = true;
     }
-    uiHelper.startCountdown(trainingDuration);
+    uiHelper.startCountdown(trainingDuration, true);
 
     setTimeout(async () => {
       mlMode = MLMode.IDLE;
