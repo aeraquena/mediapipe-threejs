@@ -270,14 +270,24 @@ async function predictWebcam() {
         }
       }
 
+      // Gestural control
       if (mlMode === MLMode.IDLE || mlMode === MLMode.PREDICTING) {
         // Track raised hand. Y axis is flipped
-        // TODO: If 2 player mode, both people need to raise hands
-        if (
+        let raisingHands = false;
+        raisingHands =
           result.landmarks[0] &&
           result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_INDEX].y <
-            result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_EYE].y
-        ) {
+            result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_EYE].y;
+
+        if (numberOfPlayers === 2) {
+          raisingHands =
+            raisingHands &&
+            result.landmarks[1] &&
+            result.landmarks[1][mediaPipeHelper.JOINTS.RIGHT_INDEX].y <
+              result.landmarks[1][mediaPipeHelper.JOINTS.RIGHT_EYE].y;
+        }
+
+        if (raisingHands) {
           if (raiseHandCountdown > RAISE_HAND_TIME) {
             // Train body
             countdownToRecord();
