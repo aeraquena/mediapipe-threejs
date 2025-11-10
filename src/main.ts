@@ -268,7 +268,9 @@ async function predictWebcam() {
             );
           }
         }
-      } else if (mlMode === MLMode.IDLE) {
+      }
+
+      if (mlMode === MLMode.IDLE || mlMode === MLMode.PREDICTING) {
         // Track raised hand. Y axis is flipped
         // TODO: If 2 player mode, both people need to raise hands
         if (
@@ -484,8 +486,6 @@ function recordBodies() {
     myNormalizations2 = null;
 
     mlMode = MLMode.IDLE;
-
-    alert("Reset! Click button to record Person 1 again.");
   }
 }
 
