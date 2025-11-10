@@ -389,13 +389,16 @@ async function trainModel() {
       trainBodyButtonLabel.innerText = "TRAINING MODEL...";
     }
 
-    let result: any = await tfHelper.run(trainingData);
-    myModel = result.model;
-    myNormalizations = result.tensorData;
+    const [result, result2] = await Promise.all([
+      tfHelper.run(trainingData),
+      tfHelper.run(trainingData2),
+    ]);
 
-    let result2: any = await tfHelper.run(trainingData2);
-    myModel2 = result2.model;
-    myNormalizations2 = result2.tensorData;
+    myModel = result?.model;
+    myNormalizations = result?.tensorData;
+
+    myModel2 = result2?.model;
+    myNormalizations2 = result2?.tensorData;
 
     dance();
   } else {
