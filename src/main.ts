@@ -38,6 +38,8 @@ trainBodyButton = document.getElementById(
 trainBodyButton?.addEventListener("click", () => {
   if (mlMode !== MLMode.PREDICTING) {
     countdownToRecord();
+  } else {
+    recordBodies(); // Reset. TODO: Name this better
   }
 });
 
