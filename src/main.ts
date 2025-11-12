@@ -6,7 +6,6 @@ import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 import * as tfHelper from "./utils/tfHelper";
 import * as uiHelper from "./utils/uiHelper";
 import RAPIER from "@dimforge/rapier3d-compat";
-import { update } from "three/examples/jsm/libs/tween.module.js";
 
 /***************
  * UI Elements *
@@ -36,6 +35,17 @@ trainBodyButton = document.getElementById(
 ) as HTMLButtonElement | null;
 
 trainBodyButton?.addEventListener("click", countdownToRecord);
+
+/*************************
+ * UI Elements - Arduino *
+ *************************/
+
+const ws = new WebSocket("ws://localhost:8080");
+const turnButton = document.getElementById("turnButton");
+
+turnButton?.addEventListener("click", () => {
+  ws.send(JSON.stringify({ action: "turn" }));
+});
 
 /**************************
  * MediaPipe declarations *
