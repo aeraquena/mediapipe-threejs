@@ -6,6 +6,7 @@ import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 import * as tfHelper from "./utils/tfHelper";
 import * as uiHelper from "./utils/uiHelper";
 import RAPIER from "@dimforge/rapier3d-compat";
+import { calculateAngle } from "./utils/math";
 
 /***************
  * UI Elements *
@@ -36,16 +37,12 @@ trainBodyButton = document.getElementById(
 
 trainBodyButton?.addEventListener("click", countdownToRecord);
 
-/*************************
- * UI Elements - Arduino *
- *************************/
+/***************************
+ * Websockets declarations *
+ ***************************/
 
 const ws = new WebSocket("ws://localhost:8080");
-const turnButton = document.getElementById("turnButton");
-
-turnButton?.addEventListener("click", () => {
-  ws.send(JSON.stringify({ action: "turn" }));
-});
+let currentAngle = 0;
 
 /**************************
  * MediaPipe declarations *
@@ -275,6 +272,17 @@ async function predictWebcam() {
 
         // push each current body to currentPoses
         currentPoses.push(landmark);
+
+        // Send websocket to Arduino
+        if (result.landmarks[0]) {
+          currentAngle = Math.floor(
+            calculateAngle(
+              result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_SHOULDER],
+              result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_ELBOW],
+              result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_WRIST]
+            )
+          );
+        }
       }
 
       canvasCtx.restore();
@@ -285,6 +293,16 @@ async function predictWebcam() {
     window.requestAnimationFrame(predictWebcam as FrameRequestCallback);
   }
 }
+// Interval to send to Arduino
+setInterval(function () {
+  console.log("send angle: " + currentAngle);
+  ws.send(
+    JSON.stringify({
+      action: "turnToAngle",
+      payload: { angle: currentAngle },
+    })
+  );
+}, 10);
 
 /******************
  * AI Training UI *
