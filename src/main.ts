@@ -278,23 +278,21 @@ async function predictWebcam() {
       }
 
       // Gestural control
+      // Terrible yoga: Is holding that pose - one leg yoga pose
       if (mlMode === MLMode.IDLE || mlMode === MLMode.PREDICTING) {
         // Track raised hand. Y axis is flipped
-        let raisingHands = false;
-        raisingHands =
+        let oneLegYogaPose = false;
+        oneLegYogaPose =
           result.landmarks[0] &&
+          // Right foot above left foot
+          result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_FOOT_INDEX].y <
+            result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_FOOT_INDEX].y &&
           result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_INDEX].y <
-            result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_EYE].y;
+            result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_EYE].y &&
+          result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_INDEX].y <
+            result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_EYE].y;
 
-        if (numberOfPlayers === 2) {
-          raisingHands =
-            raisingHands &&
-            result.landmarks[1] &&
-            result.landmarks[1][mediaPipeHelper.JOINTS.RIGHT_INDEX].y <
-              result.landmarks[1][mediaPipeHelper.JOINTS.RIGHT_EYE].y;
-        }
-
-        if (raisingHands) {
+        if (oneLegYogaPose) {
           if (raiseHandCountdown > RAISE_HAND_TIME) {
             // Train body
             countdownToRecord();
