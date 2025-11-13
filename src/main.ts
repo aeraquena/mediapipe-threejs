@@ -123,7 +123,7 @@ let numberOfPlayers: number;
  ****************/
 
 // Elapsed time that hand(s) are raised
-let raiseHandCountdown = 0;
+let oneLegYogaTime = 0;
 const RAISE_HAND_TIME = 50;
 
 function countdownToRecord() {
@@ -198,6 +198,14 @@ function enableCam(_event?: Event): void {
       video.srcObject = stream;
       video.addEventListener("loadeddata", predictWebcam as EventListener);
     });
+
+  // Send websocket message: Started
+  console.log("start_dance");
+  ws.send(
+    JSON.stringify({
+      command: "start_dance",
+    })
+  );
 }
 
 let lastVideoTime = -1;
@@ -284,36 +292,60 @@ async function predictWebcam() {
         let oneLegYogaPose = false;
         oneLegYogaPose =
           result.landmarks[0] &&
-          // Right foot above left foot
           result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_FOOT_INDEX].y <
-            result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_FOOT_INDEX].y &&
+            result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_KNEE].y + 0.1 &&
           result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_INDEX].y <
             result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_EYE].y &&
           result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_INDEX].y <
             result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_EYE].y;
 
         if (oneLegYogaPose) {
-          if (raiseHandCountdown > RAISE_HAND_TIME) {
-            // Train body
-            countdownToRecord();
-            raiseHandCountdown = 0;
-            if (trainBodyProgressBar) {
-              trainBodyProgressBar.style.width = "0%";
-            }
+          if (oneLegYogaTime === 0) {
+            // Send websocket message: Started
+            console.log("start pose");
+            ws.send(
+              JSON.stringify({
+                command: "start_music",
+                data: "./yoga.mp3",
+              })
+            );
+
+            /*console.log(
+              "right foot: ",
+              result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_FOOT_INDEX].y
+            );
+            console.log(
+              "left foot: ",
+              result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_FOOT_INDEX].y
+            );
+            console.log(
+              "left knee: ",
+              result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_KNEE].y
+            );
+            console.log("-------");*/
           }
 
-          raiseHandCountdown++;
+          oneLegYogaTime++;
 
-          if (trainBodyProgressBar) {
-            trainBodyProgressBar.style.width = `${
-              (raiseHandCountdown / RAISE_HAND_TIME) * 100 + "%"
-            }`;
+          if (trainBodyButton) {
+            trainBodyButton.style.backgroundColor = "green";
           }
         } else {
-          raiseHandCountdown = 0;
+          // Send websocket message: Stopped
+          if (oneLegYogaTime > 0) {
+            console.log("stop pose");
+            ws.send(
+              JSON.stringify({
+                command: "stop_music",
+                data: "./proud-fart.mp3",
+              })
+            );
+          }
 
-          if (trainBodyProgressBar) {
-            trainBodyProgressBar.style.width = "0%";
+          oneLegYogaTime = 0;
+
+          if (trainBodyButton) {
+            trainBodyButton.style.backgroundColor = "red";
           }
         }
       }
@@ -364,7 +396,7 @@ async function predictWebcam() {
   }
 }
 // Interval to send to Arduino
-setInterval(function () {
+/*setInterval(function () {
   console.log("send angle: " + currentAngle);
   ws.send(
     JSON.stringify({
@@ -372,7 +404,7 @@ setInterval(function () {
       payload: { angle: currentAngle },
     })
   );
-}, 10);
+}, 10);*/
 
 /******************
  * AI Training UI *
