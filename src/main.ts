@@ -309,20 +309,6 @@ async function predictWebcam() {
                 data: "./yoga.mp3",
               })
             );
-
-            /*console.log(
-              "right foot: ",
-              result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_FOOT_INDEX].y
-            );
-            console.log(
-              "left foot: ",
-              result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_FOOT_INDEX].y
-            );
-            console.log(
-              "left knee: ",
-              result.landmarks[0][mediaPipeHelper.JOINTS.LEFT_KNEE].y
-            );
-            console.log("-------");*/
           }
 
           oneLegYogaTime++;
