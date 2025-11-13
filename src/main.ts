@@ -35,6 +35,22 @@ trainBodyButton = document.getElementById(
   "trainBodyButton"
 ) as HTMLButtonElement | null;
 
+/*
+const trainBodyProgressBar: HTMLDivElement | null = trainBodyButton
+  ? (trainBodyButton.querySelector(
+      ".progress-bar-fill"
+    ) as HTMLDivElement | null)
+  : null;
+  */
+
+const trainBodyButtonLabel: HTMLDivElement | null = trainBodyButton
+  ? (trainBodyButton.querySelector(".button-label") as HTMLDivElement | null)
+  : null;
+
+const trainBodyProgressBar: HTMLDivElement | null = document.getElementById(
+  "progress-bar-fill"
+) as HTMLDivElement | null;
+
 trainBodyButton?.addEventListener("click", countdownToRecord);
 
 /***************************
@@ -106,19 +122,31 @@ let numberOfPlayers: number;
  * UI functions *
  ****************/
 
+// Elapsed time that hand(s) are raised
+let raiseHandCountdown = 0;
+const RAISE_HAND_TIME = 50;
+
 function countdownToRecord() {
-  uiHelper.startCountdown(countdownDuration);
-  setTimeout(() => {
+  if (mlMode !== MLMode.PREDICTING) {
+    uiHelper.startCountdown(countdownDuration, false);
+    setTimeout(() => {
+      recordBodies();
+    }, countdownDuration * 1000);
+  } else {
     recordBodies();
-  }, countdownDuration * 1000);
+  }
 }
 
 function updateTrainBodyButton() {
-  if (trainBodyButton) {
-    if (numberOfPlayers === 2) {
-      trainBodyButton.innerText = "RECORD 2 PEOPLE";
+  if (trainBodyButtonLabel) {
+    if (mlMode === MLMode.PREDICTING) {
+      trainBodyButtonLabel.innerText = "RETRAIN AI";
     } else {
-      trainBodyButton.innerText = "RECORD 1 PERSON";
+      if (numberOfPlayers === 2) {
+        trainBodyButtonLabel.innerText = "RECORD 2 PEOPLE";
+      } else {
+        trainBodyButtonLabel.innerText = "RECORD 1 PERSON";
+      }
     }
   }
 }
@@ -174,6 +202,7 @@ function enableCam(_event?: Event): void {
 
 let lastVideoTime = -1;
 
+// Process each video frame and create pose landmarker
 async function predictWebcam() {
   // Sets the canvas element and video height and width on every frame
   // Does the small size improve MediaPipe performance?
@@ -244,6 +273,49 @@ async function predictWebcam() {
               inputPose,
               myNormalizations2
             );
+          }
+        }
+      }
+
+      // Gestural control
+      if (mlMode === MLMode.IDLE || mlMode === MLMode.PREDICTING) {
+        // Track raised hand. Y axis is flipped
+        let raisingHands = false;
+        raisingHands =
+          result.landmarks[0] &&
+          result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_INDEX].y <
+            result.landmarks[0][mediaPipeHelper.JOINTS.RIGHT_EYE].y;
+
+        if (numberOfPlayers === 2) {
+          raisingHands =
+            raisingHands &&
+            result.landmarks[1] &&
+            result.landmarks[1][mediaPipeHelper.JOINTS.RIGHT_INDEX].y <
+              result.landmarks[1][mediaPipeHelper.JOINTS.RIGHT_EYE].y;
+        }
+
+        if (raisingHands) {
+          if (raiseHandCountdown > RAISE_HAND_TIME) {
+            // Train body
+            countdownToRecord();
+            raiseHandCountdown = 0;
+            if (trainBodyProgressBar) {
+              trainBodyProgressBar.style.width = "0%";
+            }
+          }
+
+          raiseHandCountdown++;
+
+          if (trainBodyProgressBar) {
+            trainBodyProgressBar.style.width = `${
+              (raiseHandCountdown / RAISE_HAND_TIME) * 100 + "%"
+            }`;
+          }
+        } else {
+          raiseHandCountdown = 0;
+
+          if (trainBodyProgressBar) {
+            trainBodyProgressBar.style.width = "0%";
           }
         }
       }
@@ -341,24 +413,27 @@ async function trainModel() {
       });
     }
 
-    if (trainBodyButton) {
-      trainBodyButton.innerText = "TRAINING MODEL...";
+    if (trainBodyButtonLabel) {
+      trainBodyButtonLabel.innerText = "TRAINING MODEL...";
     }
 
-    let result: any = await tfHelper.run(trainingData);
-    myModel = result.model;
-    myNormalizations = result.tensorData;
+    const [result, result2] = await Promise.all([
+      tfHelper.run(trainingData),
+      tfHelper.run(trainingData2),
+    ]);
 
-    let result2: any = await tfHelper.run(trainingData2);
-    myModel2 = result2.model;
-    myNormalizations2 = result2.tensorData;
+    myModel = result?.model;
+    myNormalizations = result?.tensorData;
+
+    myModel2 = result2?.model;
+    myNormalizations2 = result2?.tensorData;
 
     dance();
   } else {
     alert("Not enough training data collected. Please try again.");
   }
-  if (trainBodyButton) {
-    trainBodyButton.innerText = "RETRAIN MODEL";
+  if (trainBodyButtonLabel && trainBodyButton) {
+    trainBodyButtonLabel.innerText = "RETRAIN MODEL";
     trainBodyButton.disabled = false;
   }
 }
@@ -374,12 +449,12 @@ function recordBodies() {
       person1Poses = [];
       person2Poses = [];
 
-      if (trainBodyButton) {
-        trainBodyButton.innerText = "RECORDING BOTH...";
+      if (trainBodyButtonLabel && trainBodyButton) {
+        trainBodyButtonLabel.innerText = "RECORDING BOTH...";
         trainBodyButton.disabled = true;
       }
 
-      uiHelper.startCountdown(trainingDuration);
+      uiHelper.startCountdown(trainingDuration, true);
 
       setTimeout(async () => {
         // TODO: Can I make this a function, to not repeat myself twice?
@@ -397,11 +472,11 @@ function recordBodies() {
       mlMode = MLMode.TRAINING;
       person1Poses = [];
 
-      if (trainBodyButton) {
-        trainBodyButton.innerText = "RECORDING PERSON 1...";
+      if (trainBodyButton && trainBodyButtonLabel) {
+        trainBodyButtonLabel.innerText = "RECORDING PERSON 1...";
         trainBodyButton.disabled = true;
       }
-      uiHelper.startCountdown(trainingDuration);
+      uiHelper.startCountdown(trainingDuration, true);
 
       setTimeout(() => {
         mlMode = MLMode.IDLE;
@@ -426,11 +501,11 @@ function recordBodies() {
     mlMode = MLMode.TRAINING;
     person2Poses = [];
 
-    if (trainBodyButton) {
-      trainBodyButton.innerText = "RECORDING PERSON 2...";
+    if (trainBodyButton && trainBodyButtonLabel) {
+      trainBodyButtonLabel.innerText = "RECORDING PERSON 2...";
       trainBodyButton.disabled = true;
     }
-    uiHelper.startCountdown(trainingDuration);
+    uiHelper.startCountdown(trainingDuration, true);
 
     setTimeout(async () => {
       mlMode = MLMode.IDLE;
@@ -443,6 +518,7 @@ function recordBodies() {
   }
   // Reset: Start over
   else {
+    // Reset
     person1Poses = [];
     person2Poses = [];
     myModel = null;
@@ -450,7 +526,7 @@ function recordBodies() {
     myModel2 = null;
     myNormalizations2 = null;
 
-    alert("Reset! Click button to record Person 1 again.");
+    mlMode = MLMode.IDLE;
   }
 }
 

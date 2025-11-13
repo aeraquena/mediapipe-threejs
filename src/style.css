@@ -123,10 +123,25 @@ footer {
   padding: 10px;
   margin-right: 10px;
   margin-bottom: 15px;
+  position: relative;
 }
 
 .ui-button:hover {
   background-color: yellow;
+}
+
+.button-label {
+  position: relative; /* Ensure text is above the progress bar */
+  z-index: 1; /* Place text above the progress bar fill */
+}
+
+.progress-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: yellow; /* Color of the progress bar fill */
+  /*transition: width 0.3s ease-in-out;*/ /* Smooth transition for width changes */
 }
 
 #threeJsCanvas {
