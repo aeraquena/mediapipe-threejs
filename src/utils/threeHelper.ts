@@ -3,6 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { JOINTS } from "./mediaPipeHelper";
 import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
 import { getJoint } from "./getBody";
+import NumberSmoother from "./numberSmoother";
 
 const bodyColors: THREE.Color[] = [
   new THREE.Color().setHex(0x44aeb3), // cyan
@@ -137,6 +138,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
   const strength = standing ? 0.025 : 0.07;
   const numBallsBetweenJoints = standing ? 15 : 10;
 
+  const smoother = new NumberSmoother();
+
   skeletonMetaballs.userData = {
     // landmarks = currentPoses
     update(landmarks: any) {
@@ -144,6 +147,21 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
       // loop through all existing rigid bodies, get add a metaball to each
       for (let j = 0; j < landmarks.length; j++) {
         skeletonBodies.forEach((b, i) => {
+          // Get depth of nose
+          const rawZ = -1 * landmarks[j][JOINTS.NOSE].z;
+          const zDepth = smoother.smooth(rawZ);
+          console.log("z depth - raw z: ", zDepth - rawZ);
+          //console.log(landmarks[j][JOINTS.NOSE].z);
+          // could visualize it as a metaball off to the side?
+          // need to multiply by -1. smaller values are closer.
+          addBallWithPositionAndSize(
+            0,
+            0,
+            strength * zDepth * 10,
+            j,
+            skeletonMetaballs
+          );
+
           // Skip all head landmarks, foot index, and hands
           if (
             i > 10 &&

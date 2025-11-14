@@ -34,14 +34,6 @@ trainBodyButton = document.getElementById(
   "trainBodyButton"
 ) as HTMLButtonElement | null;
 
-/*
-const trainBodyProgressBar: HTMLDivElement | null = trainBodyButton
-  ? (trainBodyButton.querySelector(
-      ".progress-bar-fill"
-    ) as HTMLDivElement | null)
-  : null;
-  */
-
 const trainBodyButtonLabel: HTMLDivElement | null = trainBodyButton
   ? (trainBodyButton.querySelector(".button-label") as HTMLDivElement | null)
   : null;
@@ -541,12 +533,6 @@ let world = new RAPIER.World(gravity);
 const directionalLight = threeHelper.addDirectionalLight();
 scene.add(directionalLight);
 scene.add(directionalLight.target);
-
-// Cube for debug
-/*const geometry = new THREE.BoxGeometry(20, 1, 1);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);*/
 
 // Add grid
 const size = 1.125;
