@@ -1,6 +1,6 @@
 # Tensordancer
 
-Two people dance together and train AIs on each others' movements!
+Two people dance together and train AIs on each others' movements.
 
 https://github.com/user-attachments/assets/d58597eb-e464-4ba9-8c6c-43c65a01da88
 
