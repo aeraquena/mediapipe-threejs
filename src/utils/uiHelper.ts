@@ -1,12 +1,14 @@
 let countdownEl: HTMLDivElement | null = null;
 
 // Displays and starts countdown
-export function startCountdown(seconds: number): void {
+export function startCountdown(seconds: number, isRecording: boolean): void {
   let remaining = seconds;
   // Use the existing countdown element from HTML
   countdownEl = document.getElementById("countdown") as HTMLDivElement | null;
 
+  console.log("start countdown, is recording: ", isRecording);
   if (countdownEl) {
+    countdownEl.style.color = isRecording ? "#ffffff" : "#999999";
     countdownEl.textContent = remaining.toString();
   }
 
