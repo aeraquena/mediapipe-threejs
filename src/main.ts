@@ -6,7 +6,6 @@ import * as mediaPipeHelper from "./utils/mediaPipeHelper";
 import * as tfHelper from "./utils/tfHelper";
 import * as uiHelper from "./utils/uiHelper";
 import RAPIER from "@dimforge/rapier3d-compat";
-import { update } from "three/examples/jsm/libs/tween.module.js";
 
 /***************
  * UI Elements *
