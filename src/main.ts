@@ -550,7 +550,7 @@ scene.add(cube);*/
 
 // Add grid
 const size = 1.125;
-const divisions = 20;
+const divisions = 1;
 const gridHelper = new THREE.GridHelper(size, divisions);
 // Rotate the grid 90 degrees (Math.PI / 2 radians) around the X-axis
 gridHelper.rotation.x = Math.PI / 2;
