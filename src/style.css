@@ -138,7 +138,7 @@ footer {
 
 .slider {
   -webkit-appearance: none;
-  width: 300px;
+  width: 220px;
   height: 64px;
   background: rgb(239, 239, 239);
   outline: none;
@@ -171,7 +171,7 @@ footer {
 
 .slider-container {
   position: relative;
-  width: 300px;
+  width: 220px;
   display: inline-block;
   top: 20px;
   margin-right: 10px;
