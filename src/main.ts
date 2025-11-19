@@ -152,7 +152,7 @@ let numberOfPlayers: number;
 
 // Elapsed time that hand(s) are raised
 let raiseHandCountdown = 0;
-const RAISE_HAND_TIME = 50;
+const RAISE_HAND_TIME = 100; // about 5 seconds
 
 function countdownToRecord() {
   if (mlMode !== MLMode.PREDICTING) {
