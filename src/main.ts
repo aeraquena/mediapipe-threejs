@@ -56,10 +56,13 @@ const strengthValue: HTMLSpanElement | null = document.getElementById(
 
 let ballStrength = 0.033; // default strength for standing
 if (strengthSlider && strengthValue) {
+  // Initializa=e
   strengthSlider.value = (ballStrength * 1000).toString();
+  strengthValue.innerText = strengthSlider.value;
+
   strengthSlider.oninput = function () {
     ballStrength = Number(strengthSlider.value) * 0.001;
-    strengthValue.innerText = strengthSlider.value + "%";
+    strengthValue.innerText = strengthSlider.value;
   };
 }
 
@@ -75,7 +78,10 @@ const articulationValue: HTMLSpanElement | null = document.getElementById(
 
 let articulation = 8; // default articulation for standing
 if (articulationSlider && articulationValue) {
+  // Initialization
   articulationSlider.value = articulation.toString();
+  articulationValue.innerText = articulationSlider.value;
+
   articulationSlider.oninput = function () {
     articulation = Number(articulationSlider.value);
     articulationValue.innerText = articulationSlider.value;
