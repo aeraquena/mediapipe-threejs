@@ -608,7 +608,10 @@ function animate() {
   // Metaballs
   // TODO: Can "flatten" two objects of currentPoses now
   // Calls update here with current poses. Should we pass in strength here?
-  skeletonMetaballs.userData.update([...currentPoses, ...aiPoses]);
+  skeletonMetaballs.userData.update(
+    [...currentPoses, ...aiPoses],
+    ballStrength
+  );
   world.step();
 
   renderer.render(scene, camera);

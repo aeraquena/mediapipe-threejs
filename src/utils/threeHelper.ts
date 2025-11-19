@@ -134,8 +134,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
   skeletonMetaballs.isolation = 800; // blobbiness or size. smaller number = bigger
 
-  const defaultStrength = standing ? 0.025 : 0.07;
-  const numBallsBetweenJoints = standing ? 15 : 10;
+  const defaultStrength = 0.025; //standing ? 0.025 : 0.07;
+  const numBallsBetweenJoints = 15; //standing ? 15 : 10;
 
   skeletonMetaballs.userData = {
     // landmarks = currentPoses

@@ -20,7 +20,11 @@
           <span class="button-label">RECORD PERSON 1</span>
           <div id="progress-bar-fill" class="progress-bar-fill"></div>
         </button>
-        <span>
+        <div class="slider-container">
+          <span class="button-label button-label-left">THICKNESS</span>
+          <span id="strength-value" class="button-label button-label-right"
+            >0.25</span
+          >
           <input
             type="range"
             min="1"
@@ -29,8 +33,7 @@
             class="slider"
             id="strength-slider"
           />
-          <span id="strength-value">0.25</span>
-        </span>
+        </div>
         <div style="position: relative">
           <video
             id="webcam"
