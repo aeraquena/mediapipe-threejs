@@ -592,7 +592,7 @@ const gridHelper = new THREE.GridHelper(size, divisions);
 gridHelper.rotation.x = Math.PI / 2;
 gridHelper.position.y = -0.125;
 
-scene.add(gridHelper);
+//scene.add(gridHelper);
 
 // Metaballs for joints
 const skeletonMetaballs = threeHelper.createSkeletonMetaballs(RAPIER, world);
