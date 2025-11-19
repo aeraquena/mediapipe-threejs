@@ -14,6 +14,9 @@ import RAPIER from "@dimforge/rapier3d-compat";
 let enableWebcamButton: HTMLButtonElement | null = null;
 let videoToggleButton: HTMLButtonElement | null = null;
 let trainBodyButton: HTMLButtonElement | null = null;
+const strengthSlider: HTMLInputElement | null = document.getElementById(
+  "strength-slider"
+) as HTMLInputElement | null;
 
 const video = document.getElementById("webcam") as HTMLVideoElement;
 const canvasElement = document.getElementById(
@@ -34,14 +37,6 @@ trainBodyButton = document.getElementById(
   "trainBodyButton"
 ) as HTMLButtonElement | null;
 
-/*
-const trainBodyProgressBar: HTMLDivElement | null = trainBodyButton
-  ? (trainBodyButton.querySelector(
-      ".progress-bar-fill"
-    ) as HTMLDivElement | null)
-  : null;
-  */
-
 const trainBodyButtonLabel: HTMLDivElement | null = trainBodyButton
   ? (trainBodyButton.querySelector(".button-label") as HTMLDivElement | null)
   : null;
@@ -51,6 +46,13 @@ const trainBodyProgressBar: HTMLDivElement | null = document.getElementById(
 ) as HTMLDivElement | null;
 
 trainBodyButton?.addEventListener("click", countdownToRecord);
+
+if (strengthSlider) {
+  strengthSlider.oninput = function () {
+    // TODO: Replace with controlling the strength multiplier
+    console.log(strengthSlider.value);
+  };
+}
 
 /**************************
  * MediaPipe declarations *
