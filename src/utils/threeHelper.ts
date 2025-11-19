@@ -143,11 +143,8 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
           // Skip all head landmarks, foot index, and hands
           if (
             i > 10 &&
-            i < 31 &&
             i !== JOINTS.LEFT_PINKY &&
             i !== JOINTS.RIGHT_PINKY &&
-            i !== JOINTS.LEFT_INDEX &&
-            i !== JOINTS.RIGHT_INDEX &&
             i !== JOINTS.LEFT_THUMB &&
             i !== JOINTS.RIGHT_THUMB
           ) {
