@@ -14,9 +14,6 @@ import RAPIER from "@dimforge/rapier3d-compat";
 let enableWebcamButton: HTMLButtonElement | null = null;
 let videoToggleButton: HTMLButtonElement | null = null;
 let trainBodyButton: HTMLButtonElement | null = null;
-const strengthSlider: HTMLInputElement | null = document.getElementById(
-  "strength-slider"
-) as HTMLInputElement | null;
 
 const video = document.getElementById("webcam") as HTMLVideoElement;
 const canvasElement = document.getElementById(
@@ -47,10 +44,21 @@ const trainBodyProgressBar: HTMLDivElement | null = document.getElementById(
 
 trainBodyButton?.addEventListener("click", countdownToRecord);
 
-if (strengthSlider) {
+// Strength slider
+
+const strengthSlider: HTMLInputElement | null = document.getElementById(
+  "strength-slider"
+) as HTMLInputElement | null;
+
+const strengthValue: HTMLSpanElement | null = document.getElementById(
+  "strength-value"
+) as HTMLSpanElement | null;
+
+let ballStrength = 0.025; // default strength for standing
+if (strengthSlider && strengthValue) {
   strengthSlider.oninput = function () {
-    // TODO: Replace with controlling the strength multiplier
-    console.log(strengthSlider.value);
+    ballStrength = Number(strengthSlider.value) * 0.01;
+    strengthValue.innerText = ballStrength.toFixed(2).toString();
   };
 }
 
@@ -599,6 +607,7 @@ function animate() {
 
   // Metaballs
   // TODO: Can "flatten" two objects of currentPoses now
+  // Calls update here with current poses. Should we pass in strength here?
   skeletonMetaballs.userData.update([...currentPoses, ...aiPoses]);
   world.step();
 

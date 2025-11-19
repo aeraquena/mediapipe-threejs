@@ -134,12 +134,12 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
 
   skeletonMetaballs.isolation = 800; // blobbiness or size. smaller number = bigger
 
-  const strength = standing ? 0.025 : 0.07;
+  const defaultStrength = standing ? 0.025 : 0.07;
   const numBallsBetweenJoints = standing ? 15 : 10;
 
   skeletonMetaballs.userData = {
     // landmarks = currentPoses
-    update(landmarks: any) {
+    update(landmarks: any, strength: number = defaultStrength) {
       skeletonMetaballs.reset();
       // loop through all existing rigid bodies, get add a metaball to each
       for (let j = 0; j < landmarks.length; j++) {

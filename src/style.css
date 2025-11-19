@@ -142,6 +142,7 @@ footer {
   height: 100%;
   background-color: yellow; /* Color of the progress bar fill */
 }
+
 .slider {
   -webkit-appearance: none;
   width: 300px;
@@ -171,6 +172,11 @@ footer {
   height: 25px;
   background: magenta;
   cursor: pointer;
+}
+
+#strength-value {
+  color: #fff;
+  font-size: 32px;
 }
 
 #threeJsCanvas {
