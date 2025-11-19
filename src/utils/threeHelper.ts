@@ -129,17 +129,13 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
   // Expand the bounding box to cover more space
   skeletonMetaballs.scale.setScalar(1);
 
-  // Standing or sitting?
-  const standing = true;
-
   skeletonMetaballs.isolation = 800; // blobbiness or size. smaller number = bigger
 
-  const defaultStrength = 0.025; //standing ? 0.025 : 0.07;
-  const numBallsBetweenJoints = 15; //standing ? 15 : 10;
+  const legMultiplier = 1.5; // How many more balls between joints for the legs vs. the arms?
 
   skeletonMetaballs.userData = {
     // landmarks = currentPoses
-    update(landmarks: any, strength: number = defaultStrength) {
+    update(landmarks: any, strength: number, numBallsBetweenJoints: number) {
       skeletonMetaballs.reset();
       // loop through all existing rigid bodies, get add a metaball to each
       for (let j = 0; j < landmarks.length; j++) {
@@ -237,7 +233,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.RIGHT_HIP],
           landmarks[j][JOINTS.RIGHT_KNEE],
-          numBallsBetweenJoints,
+          Math.floor(numBallsBetweenJoints * legMultiplier),
           strength,
           j,
           skeletonMetaballs
@@ -247,7 +243,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.RIGHT_KNEE],
           landmarks[j][JOINTS.RIGHT_ANKLE],
-          numBallsBetweenJoints,
+          Math.floor(numBallsBetweenJoints * legMultiplier),
           strength,
           j,
           skeletonMetaballs
@@ -257,7 +253,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.LEFT_HIP],
           landmarks[j][JOINTS.LEFT_KNEE],
-          numBallsBetweenJoints,
+          Math.floor(numBallsBetweenJoints * legMultiplier),
           strength,
           j,
           skeletonMetaballs
@@ -267,7 +263,7 @@ export function createSkeletonMetaballs(RAPIER: any, world: any) {
         addBallsBetweenJoints(
           landmarks[j][JOINTS.LEFT_KNEE],
           landmarks[j][JOINTS.LEFT_ANKLE],
-          numBallsBetweenJoints,
+          Math.floor(numBallsBetweenJoints * legMultiplier),
           strength,
           j,
           skeletonMetaballs

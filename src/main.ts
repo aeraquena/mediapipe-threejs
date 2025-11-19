@@ -54,11 +54,31 @@ const strengthValue: HTMLSpanElement | null = document.getElementById(
   "strength-value"
 ) as HTMLSpanElement | null;
 
-let ballStrength = 0.025; // default strength for standing
+let ballStrength = 0.033; // default strength for standing
 if (strengthSlider && strengthValue) {
+  strengthSlider.value = (ballStrength * 1000).toString();
   strengthSlider.oninput = function () {
     ballStrength = Number(strengthSlider.value) * 0.001;
-    strengthValue.innerText = ballStrength.toFixed(3).toString();
+    strengthValue.innerText = strengthSlider.value + "%";
+  };
+}
+
+// Articulation slider
+
+const articulationSlider: HTMLInputElement | null = document.getElementById(
+  "articulation-slider"
+) as HTMLInputElement | null;
+
+const articulationValue: HTMLSpanElement | null = document.getElementById(
+  "articulation-value"
+) as HTMLSpanElement | null;
+
+let articulation = 8; // default articulation for standing
+if (articulationSlider && articulationValue) {
+  articulationSlider.value = articulation.toString();
+  articulationSlider.oninput = function () {
+    articulation = Number(articulationSlider.value);
+    articulationValue.innerText = articulationSlider.value;
   };
 }
 
@@ -610,7 +630,8 @@ function animate() {
   // Calls update here with current poses. Should we pass in strength here?
   skeletonMetaballs.userData.update(
     [...currentPoses, ...aiPoses],
-    ballStrength
+    ballStrength,
+    articulation
   );
   world.step();
 
