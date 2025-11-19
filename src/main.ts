@@ -57,8 +57,8 @@ const strengthValue: HTMLSpanElement | null = document.getElementById(
 let ballStrength = 0.025; // default strength for standing
 if (strengthSlider && strengthValue) {
   strengthSlider.oninput = function () {
-    ballStrength = Number(strengthSlider.value) * 0.01;
-    strengthValue.innerText = ballStrength.toFixed(2).toString();
+    ballStrength = Number(strengthSlider.value) * 0.001;
+    strengthValue.innerText = ballStrength.toFixed(3).toString();
   };
 }
 

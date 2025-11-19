@@ -147,7 +147,7 @@ footer {
   -webkit-appearance: none;
   width: 300px;
   height: 64px;
-  background: #ffffff;
+  background: rgb(239, 239, 239);
   outline: none;
   opacity: 1;
   -webkit-transition: 0.2s;
