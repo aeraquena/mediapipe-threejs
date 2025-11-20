@@ -45,10 +45,10 @@ function addBallWithPositionAndSize(
   const scale = 0.5;
   // X positions for each dancer
   // Person 1, Person 2, AI 1, AI 2
-  //const xPositions = [0.6, 0.6, -0.2, 1.2];
+  const xPositions = [0.6, 0.6, 0.1, 1.1];
 
   // For 1 person:
-  const xPositions = [0.6, -0.2, 1.2];
+  //const xPositions = [0.6, -0.2, 1.2];
 
   // Use FULL 0-1 range, no padding at all
   let newXPos = 1 - xPos + xPositions[bodyIndex];
